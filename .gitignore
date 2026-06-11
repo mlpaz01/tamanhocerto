@@ -1,0 +1,19 @@
+.DS_Store
+Thumbs.db
+
+# Local/editor
+.vscode/
+.idea/
+*.log
+
+# Backups and archives
+*.bak
+*.zip
+*.tar.gz
+*.tgz
+
+# Secrets
+.env
+.env.*
+*.pem
+*.key

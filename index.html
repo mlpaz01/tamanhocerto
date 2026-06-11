@@ -1,0 +1,2290 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>tamanhocerto — a tecnologia que entrega o caimento ideal para você</title>
+
+<!-- SEO -->
+<meta name="description" content="A tecnologia que entende seu corpo, respeita a modelagem da marca e entrega o caimento ideal. Menos devoluções, mais elogios, vestiu perfeito.">
+<meta name="keywords" content="tamanho ideal, recomendação de tamanho, caimento, moda, IA, visão computacional, sizing, e-commerce moda">
+<meta name="author" content="tamanhocerto">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://tamanhocerto.com.br/">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://tamanhocerto.com.br/">
+<meta property="og:title" content="tamanhocerto — vestiu perfeito">
+<meta property="og:description" content="A tecnologia que entende seu corpo, respeita a modelagem da marca e entrega o caimento ideal em qualquer marca.">
+<meta property="og:image" content="https://tamanhocerto.com.br/img/og-image.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:site_name" content="tamanhocerto">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="tamanhocerto — vestiu perfeito">
+<meta name="twitter:description" content="A tecnologia que entrega o caimento ideal para você. Em qualquer marca.">
+<meta name="twitter:image" content="https://tamanhocerto.com.br/img/og-image.jpg">
+
+<!-- Favicon -->
+<link rel="icon" type="image/png" href="img/favicon.png">
+<link rel="apple-touch-icon" href="img/favicon.png">
+<meta name="theme-color" content="#111111">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F7F5F2;
+    --bg-dark: #EFECE8;
+    --ink: #111111;
+    --ink-soft: #1C1C1C;
+    --accent: #8B7B6B;
+    --accent-soft: #B5A898;
+    --muted: #8A8480;
+    --line: rgba(17,17,17,0.09);
+    --paper: #FFFFFF;
+    --display: 'Cormorant Garamond', Georgia, serif;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--sans);
+    color: var(--ink);
+    background: var(--bg);
+    font-weight: 300;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* ============ REVEAL ANIMATIONS ============ */
+  .reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.9s ease, transform 0.9s ease;
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .reveal-child:nth-child(1) { transition-delay: 0s; }
+  .reveal-child:nth-child(2) { transition-delay: 0.1s; }
+  .reveal-child:nth-child(3) { transition-delay: 0.2s; }
+  .reveal-child:nth-child(4) { transition-delay: 0.3s; }
+
+  /* ============ NAV ============ */
+  .nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 24px 48px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    backdrop-filter: blur(20px);
+    background: rgba(247,245,242,0.88);
+    border-bottom: 1px solid var(--line);
+    transition: padding 0.3s ease;
+  }
+  .nav.scrolled { padding: 14px 48px; }
+  .nav-logo {
+    font-family: var(--display);
+    font-size: 22px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--ink);
+  }
+  .nav-logo-mark { width: 32px; height: 28px; display: inline-block; }
+  .nav-links {
+    display: flex;
+    gap: 36px;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-weight: 400;
+  }
+  .nav-links a { color: var(--ink); text-decoration: none; transition: color .2s; }
+  .nav-links a:hover { color: var(--accent); }
+  .nav-cta {
+    background: var(--ink);
+    color: var(--bg);
+    border: none;
+    padding: 12px 28px;
+    font-family: var(--sans);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all .3s;
+    border-radius: 2px;
+  }
+  .nav-cta:hover { background: var(--accent); }
+
+  /* ============ HERO ============ */
+  .hero {
+    min-height: 100vh;
+    padding: 160px 48px 120px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    position: relative;
+    text-align: center;
+  }
+
+  .hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 40px;
+    font-weight: 400;
+    flex-direction: column;
+  }
+  .hero-eyebrow-text {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .hero-eyebrow-line {
+    display: block;
+    width: 0;
+    height: 1px;
+    background: var(--accent);
+    animation: lineGrow 0.8s ease 0.4s forwards;
+  }
+  @keyframes lineGrow {
+    to { width: 40px; }
+  }
+
+  .hero-title {
+    font-family: var(--display);
+    font-size: clamp(64px, 8vw, 110px);
+    font-weight: 300;
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    margin-bottom: 40px;
+    max-width: 900px;
+  }
+  .hero-title .line {
+    display: block;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: lineReveal 0.8s ease forwards;
+  }
+  .hero-title .line:nth-child(1) { animation-delay: 0.1s; }
+  .hero-title .line:nth-child(2) { animation-delay: 0.25s; }
+  .hero-title .line:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes lineReveal {
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .hero-title em { font-style: italic; color: var(--accent); font-weight: 300; }
+
+  .hero-sub {
+    font-size: 15px;
+    color: var(--muted);
+    margin-bottom: 56px;
+    max-width: 500px;
+    line-height: 1.8;
+    font-weight: 300;
+    letter-spacing: 0.02em;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 40px;
+  }
+
+  .hero-stats {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    opacity: 0;
+    animation: lineReveal 0.8s ease 0.7s forwards;
+  }
+  .hero-stats-line {
+    width: 32px;
+    height: 1px;
+    background: var(--line);
+  }
+  .hero-stats-text {
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .btn-primary {
+    background: var(--ink);
+    color: var(--bg);
+    border: none;
+    padding: 18px 36px;
+    font-family: var(--sans);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all .3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    border-radius: 2px;
+  }
+  .btn-primary:hover { background: var(--accent); transform: translateY(-2px); }
+  .btn-primary svg { transition: transform .3s; }
+  .btn-primary:hover svg { transform: translateX(4px); }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--ink);
+    border: none;
+    padding: 18px 0;
+    font-family: var(--sans);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-bottom: 1px solid var(--ink);
+    transition: color .3s, border-color .3s;
+  }
+  .btn-ghost:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* ============ STRIP ============ */
+  .strip {
+    background: #111111;
+    color: #fff;
+    padding: 32px 48px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0;
+    flex-wrap: wrap;
+  }
+  .strip-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.5);
+    padding: 0 56px;
+  }
+  .strip-item:not(:last-child) {
+    border-right: 1px solid rgba(255,255,255,0.1);
+  }
+  .strip-num {
+    font-family: var(--display);
+    font-size: 30px;
+    color: #ffffff;
+    font-weight: 300;
+    letter-spacing: -0.02em;
+    text-transform: none;
+  }
+
+  /* ============ VALUE ============ */
+  .value { padding: 160px 48px; background: var(--paper); }
+  .section-eyebrow {
+    text-align: center;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 24px;
+    font-weight: 400;
+  }
+  .section-title {
+    font-family: var(--display);
+    font-size: clamp(42px, 5vw, 72px);
+    text-align: center;
+    font-weight: 300;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin-bottom: 80px;
+    max-width: 760px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .section-title em { font-style: italic; color: var(--accent); font-weight: 300; }
+
+  .value-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    max-width: 1280px;
+    margin: 0 auto;
+    background: var(--line);
+  }
+  .value-card {
+    background: var(--paper);
+    padding: 64px 48px;
+    transition: background .4s, border-color .4s;
+    border: 1px solid transparent;
+  }
+  .value-card:hover {
+    background: var(--bg-dark);
+    border-color: var(--accent);
+    transform: translateY(-6px);
+    box-shadow: 0 2px 20px rgba(0,0,0,0.06);
+  }
+  .value-accent-line {
+    width: 32px;
+    height: 1px;
+    background: var(--accent);
+    margin-bottom: 28px;
+  }
+  .value-card h3 {
+    font-family: var(--display);
+    font-size: 26px;
+    font-weight: 400;
+    margin-bottom: 16px;
+    letter-spacing: -0.01em;
+  }
+  .value-card p { color: var(--muted); font-size: 14px; line-height: 1.8; }
+
+  /* ============ HOW ============ */
+  .how { padding: 160px 48px; background: var(--bg); }
+  .how-steps {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 32px;
+    position: relative;
+  }
+  .how-steps::before {
+    content: '';
+    position: absolute;
+    top: 32px;
+    left: 12.5%; right: 12.5%;
+    height: 1px;
+    background: var(--accent-soft);
+    opacity: 0.3;
+  }
+  .step { text-align: center; position: relative; }
+  .step-circle {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    background: transparent;
+    border: 1px solid var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+    font-family: var(--display);
+    font-style: italic;
+    font-size: 22px;
+    color: var(--accent);
+    position: relative;
+    z-index: 2;
+  }
+  .step h4 {
+    font-family: var(--display);
+    font-size: 22px;
+    font-weight: 400;
+    margin-bottom: 10px;
+    letter-spacing: -0.01em;
+  }
+  .step p { color: var(--muted); font-size: 13px; line-height: 1.7; }
+
+  /* ============ TRY ============ */
+  .try { padding: 160px 48px; background: var(--ink); color: var(--bg); }
+  .try .section-eyebrow { color: var(--accent-soft); }
+  .try .section-title { color: var(--bg); }
+
+  .try-container {
+    max-width: 720px;
+    margin: 0 auto;
+    background: var(--ink-soft);
+    border: 1px solid rgba(139,123,107,0.2);
+    padding: 64px;
+  }
+
+  .field { margin-bottom: 28px; }
+  .field-label {
+    display: block;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent-soft);
+    margin-bottom: 12px;
+    font-weight: 400;
+  }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .input, .select {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(247,245,242,0.2);
+    color: var(--bg);
+    padding: 12px 0;
+    font-family: var(--sans);
+    font-size: 16px;
+    font-weight: 300;
+    outline: none;
+    transition: border-color .3s;
+  }
+  .input:focus, .select:focus { border-bottom-color: var(--accent); }
+  .input::placeholder { color: rgba(247,245,242,0.35); }
+  .select { -webkit-appearance: none; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%238B7B6B' stroke-width='1.2'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; padding-right: 24px; }
+  .select option { background: var(--ink-soft); color: var(--bg); }
+
+  .fit-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .fit-option {
+    border: 1px solid rgba(247,245,242,0.12);
+    padding: 20px 16px;
+    cursor: pointer;
+    text-align: center;
+    transition: all .3s;
+    background: transparent;
+    color: var(--bg);
+    font-family: var(--sans);
+    border-radius: 2px;
+  }
+  .fit-option:hover { border-color: rgba(139,123,107,0.5); }
+  .fit-option.active { border-color: var(--accent); background: rgba(139,123,107,0.1); }
+  .fit-option-name { font-family: var(--display); font-size: 20px; font-weight: 400; margin-bottom: 4px; }
+  .fit-option-desc { font-size: 10px; color: rgba(247,245,242,0.45); letter-spacing: 0.1em; text-transform: uppercase; }
+
+  .upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .upload-box {
+    aspect-ratio: 3/4;
+    border: 1px dashed rgba(139,123,107,0.35);
+    background: rgba(139,123,107,0.03);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all .3s;
+    position: relative;
+    overflow: hidden;
+  }
+  .upload-box:hover { background: rgba(139,123,107,0.08); border-color: var(--accent); }
+  .upload-box svg { margin-bottom: 12px; color: var(--accent-soft); }
+  .upload-box-label { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent-soft); font-weight: 400; }
+  .upload-box-sub { font-size: 11px; color: rgba(247,245,242,0.35); margin-top: 6px; }
+  .upload-box.has-image { border-style: solid; border-color: var(--accent); background: transparent; }
+  .upload-box img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
+  .upload-box.has-image .upload-box-label,
+  .upload-box.has-image .upload-box-sub,
+  .upload-box.has-image svg { display: none; }
+  .upload-check {
+    position: absolute;
+    top: 12px; right: 12px;
+    width: 28px; height: 28px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--bg);
+    z-index: 2;
+  }
+
+  .lgpd {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+    background: rgba(139,123,107,0.05);
+    border-left: 2px solid var(--accent);
+    margin: 24px 0;
+  }
+  .lgpd input { margin-top: 3px; accent-color: var(--accent); }
+  .lgpd-text { font-size: 12px; color: rgba(247,245,242,0.65); line-height: 1.6; }
+  .lgpd-text strong { color: var(--accent-soft); font-weight: 400; }
+
+  .submit-btn {
+    width: 100%;
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    padding: 20px;
+    font-family: var(--sans);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    font-weight: 400;
+    cursor: pointer;
+    transition: all .3s;
+    margin-top: 16px;
+    border-radius: 2px;
+  }
+  .submit-btn:hover { background: var(--accent-soft); }
+
+  /* ============ OVERLAY (catálogo + resultado) ============ */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(17,17,17,0.92);
+    backdrop-filter: blur(12px);
+    z-index: 200;
+    display: none;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px 20px;
+    overflow-y: auto;
+  }
+  .overlay.open { display: flex; }
+  .overlay-modal {
+    background: var(--bg);
+    max-width: 1200px;
+    width: 100%;
+    position: relative;
+    animation: modalIn .5s ease;
+    margin: auto 0;
+  }
+  @keyframes modalIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .overlay-close {
+    position: absolute;
+    top: 20px; right: 20px;
+    width: 44px; height: 44px;
+    background: var(--ink);
+    color: var(--bg);
+    border: none;
+    cursor: pointer;
+    z-index: 50;
+    font-size: 18px;
+    transition: background .2s;
+  }
+  .overlay-close:hover { background: var(--accent); }
+
+  /* ============ LOADING ============ */
+  .loading-screen { padding: 100px 60px; text-align: center; display: block; }
+  .loading-screen.hidden { display: none; }
+  .loading-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 32px;
+  }
+  .loading-icon svg {
+    width: 100%;
+    height: 100%;
+    animation: hangSwing 2s ease-in-out infinite;
+  }
+  @keyframes hangSwing {
+    0%, 100% { transform: rotate(-3deg); }
+    50% { transform: rotate(3deg); }
+  }
+  .loading-screen h3 {
+    font-family: var(--display);
+    font-size: 32px;
+    font-weight: 300;
+    margin-bottom: 12px;
+  }
+  .loading-screen p {
+    color: var(--muted);
+    font-size: 14px;
+    letter-spacing: 0.04em;
+  }
+  .loading-steps {
+    margin-top: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 360px;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: left;
+  }
+  .loading-step {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 13px;
+    color: var(--muted);
+    opacity: 0.3;
+    transition: opacity .4s;
+  }
+  .loading-step.done { opacity: 1; color: var(--ink); }
+  .loading-step .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--muted);
+    flex-shrink: 0;
+  }
+  .loading-step.done .dot { background: var(--accent); }
+
+  /* ============ CATÁLOGO ============ */
+  .catalog-screen { display: none; padding: 0; }
+  .catalog-screen.show { display: block; }
+
+  .catalog-header {
+    padding: 40px 48px 24px;
+    border-bottom: 1px solid var(--line);
+    background: var(--paper);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .catalog-brand-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 10px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 12px;
+    font-weight: 400;
+  }
+  .catalog-brand-tag::before {
+    content: '';
+    width: 10px; height: 10px;
+    border: 1px solid var(--accent);
+    border-radius: 50%;
+  }
+  .catalog-title {
+    font-family: var(--display);
+    font-size: 42px;
+    font-weight: 300;
+    line-height: 1;
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+  }
+  .catalog-sub {
+    color: var(--muted);
+    font-size: 13px;
+    margin-bottom: 24px;
+  }
+  .catalog-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .catalog-filters {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .filter-pill {
+    padding: 9px 22px;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    font-family: var(--sans);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: all .2s;
+    border-radius: 999px;
+    color: var(--ink);
+  }
+  .filter-pill:hover { border-color: var(--accent); color: var(--accent); }
+  .filter-pill.active {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+  }
+  .catalog-search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 9px 18px;
+    background: var(--paper);
+    min-width: 240px;
+  }
+  .catalog-search:focus-within { border-color: var(--accent); }
+  .catalog-search svg { color: var(--muted); flex-shrink: 0; }
+  .catalog-search input {
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--ink);
+    width: 100%;
+  }
+  .catalog-search input::placeholder { color: var(--muted); }
+
+  .catalog-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    padding: 32px 48px 48px;
+  }
+  .product-card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    overflow: hidden;
+    cursor: pointer;
+    transition: all .3s ease;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  .product-card:hover {
+    transform: translateY(-6px);
+    border-color: var(--accent-soft);
+    box-shadow: 0 2px 20px rgba(0,0,0,0.06);
+  }
+  .product-card-image {
+    position: relative;
+    aspect-ratio: 3/4;
+    overflow: hidden;
+    background: var(--bg-dark);
+  }
+  .product-card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform .5s ease;
+  }
+  .product-card:hover .product-card-image img {
+    transform: scale(1.04);
+  }
+  .product-card-fit-tag {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    background: rgba(17,17,17,0.85);
+    color: var(--bg);
+    padding: 5px 12px;
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    border-radius: 999px;
+    backdrop-filter: blur(4px);
+  }
+  .product-card-brand {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: rgba(247,245,242,0.92);
+    color: var(--ink);
+    padding: 4px 10px;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    font-weight: 500;
+  }
+  .product-card-test-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(220,38,38,0.92);
+    color: white;
+    padding: 4px 10px;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .product-card-body {
+    padding: 18px 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .product-card-name {
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--ink);
+    line-height: 1.4;
+    min-height: 38px;
+  }
+  .product-card-desc {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .product-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 6px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+  }
+  .product-card-price {
+    font-family: var(--display);
+    font-size: 17px;
+    font-weight: 400;
+    color: var(--accent);
+  }
+  .product-card-sizes {
+    display: flex;
+    gap: 4px;
+  }
+  .size-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px; height: 22px;
+    padding: 0 5px;
+    font-size: 9px;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    border-radius: 2px;
+    font-weight: 400;
+  }
+  .catalog-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+    font-family: var(--display);
+    font-size: 18px;
+    font-style: italic;
+  }
+
+  /* ============ RESULTADO ============ */
+  .result-screen { display: none; }
+  .result-screen.show { display: block; }
+  .result-back {
+    padding: 20px 48px;
+    background: var(--paper);
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink);
+    cursor: pointer;
+    transition: color .2s;
+    font-family: var(--sans);
+    border: none;
+    width: 100%;
+    text-align: left;
+  }
+  .result-back:hover { color: var(--accent); }
+  .result-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 600px;
+  }
+  .result-visual {
+    background: var(--bg-dark);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+  }
+  .result-visual img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center top;
+  }
+  .result-test-badge {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: rgba(220,38,38,0.95);
+    color: white;
+    padding: 6px 14px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    z-index: 5;
+    transform: rotate(-3deg);
+  }
+  .result-user-photo {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    width: 100px;
+    height: 130px;
+    border: 2px solid var(--bg);
+    background: var(--paper);
+    overflow: hidden;
+    z-index: 4;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.2);
+  }
+  .result-user-photo > div, .result-user-photo img {
+    width: 100%; height: 100%;
+  }
+  .result-user-photo img { object-fit: cover; }
+  .result-user-photo-label {
+    position: absolute;
+    bottom: 8px; left: 0; right: 0;
+    text-align: center;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: white;
+    background: rgba(17,17,17,0.7);
+    padding: 3px;
+  }
+
+  .result-info {
+    padding: 50px 48px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .result-brand {
+    font-size: 10px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+    font-weight: 400;
+  }
+  .result-product-name {
+    font-family: var(--display);
+    font-size: 34px;
+    font-weight: 300;
+    line-height: 1.1;
+    margin-bottom: 12px;
+    letter-spacing: -0.01em;
+  }
+  .result-product-desc {
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.7;
+    margin-bottom: 24px;
+  }
+  .result-price {
+    font-size: 18px;
+    color: var(--ink);
+    margin-bottom: 32px;
+    font-weight: 400;
+  }
+  .result-price-installments {
+    font-size: 13px;
+    color: var(--muted);
+    margin-left: 12px;
+    font-weight: 300;
+  }
+
+  .result-recommendation {
+    background: var(--ink);
+    color: var(--bg);
+    padding: 28px 32px;
+    margin-bottom: 24px;
+  }
+  .result-rec-label {
+    font-size: 10px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--accent-soft);
+    margin-bottom: 12px;
+    font-weight: 400;
+  }
+  .result-rec-size {
+    font-family: var(--display);
+    font-size: 80px;
+    font-weight: 300;
+    line-height: 1;
+    color: var(--bg);
+    margin-bottom: 8px;
+    letter-spacing: -0.04em;
+  }
+  .result-rec-fit {
+    font-size: 13px;
+    color: rgba(247,245,242,0.65);
+    margin-bottom: 20px;
+  }
+  .result-rec-confidence {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(247,245,242,0.1);
+  }
+  .confidence-bar {
+    flex: 1;
+    height: 2px;
+    background: rgba(247,245,242,0.12);
+    position: relative;
+    overflow: hidden;
+  }
+  .confidence-fill {
+    position: absolute;
+    inset: 0;
+    background: var(--accent-soft);
+    transform-origin: left;
+    transform: scaleX(0);
+    transition: transform 1.2s ease;
+  }
+  .confidence-fill.fill { transform: scaleX(var(--conf, 0.9)); }
+  .confidence-text {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    color: var(--accent-soft);
+    font-weight: 400;
+  }
+
+  .result-justification { margin-bottom: 24px; }
+  .result-just-title {
+    font-size: 10px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 12px;
+    font-weight: 400;
+  }
+  .result-just-text {
+    font-family: var(--display);
+    font-size: 16px;
+    font-style: italic;
+    color: var(--ink);
+    line-height: 1.6;
+  }
+
+  .result-measurements {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1px;
+    background: var(--line);
+    margin-bottom: 28px;
+  }
+  .measurement {
+    background: var(--bg-dark);
+    padding: 14px 18px;
+  }
+  .measurement-label {
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .measurement-value {
+    font-family: var(--display);
+    font-size: 22px;
+    font-weight: 400;
+    color: var(--ink);
+  }
+  .measurement-value span {
+    font-size: 13px;
+    color: var(--muted);
+    margin-left: 4px;
+    font-family: var(--sans);
+    font-weight: 300;
+  }
+
+  .result-actions {
+    display: flex;
+    gap: 12px;
+  }
+  .result-btn {
+    flex: 1;
+    padding: 16px;
+    font-family: var(--sans);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all .3s;
+    border: none;
+    font-weight: 400;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 2px;
+  }
+  .result-btn-primary {
+    background: var(--ink);
+    color: var(--bg);
+  }
+  .result-btn-primary:hover { background: var(--accent); }
+  .result-btn-secondary {
+    background: transparent;
+    border: 1px solid var(--ink);
+    color: var(--ink);
+  }
+  .result-btn-secondary:hover {
+    background: var(--ink);
+    color: var(--bg);
+  }
+
+  /* ============ DASHBOARD ============ */
+  .dashboard { padding: 160px 48px; background: var(--paper); }
+  .dashboard-mock {
+    max-width: 1100px;
+    margin: 60px auto 0;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    overflow: hidden;
+  }
+  .dash-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 32px;
+    background: var(--paper);
+    border-bottom: 1px solid var(--line);
+  }
+  .dash-header-title { font-family: var(--display); font-size: 20px; font-weight: 400; }
+  .dash-header-tag {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    padding: 4px 10px;
+    border: 1px solid var(--accent-soft);
+  }
+  .dash-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--line);
+  }
+  .dash-metric { background: var(--paper); padding: 28px 24px; }
+  .dash-metric-label {
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .dash-metric-value {
+    font-family: var(--display);
+    font-size: 36px;
+    font-weight: 300;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .dash-metric-trend { font-size: 12px; color: #1d9e75; font-weight: 400; }
+  .dash-metric-trend.down { color: #c84a3c; }
+  .dash-body {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 1px;
+    background: var(--line);
+  }
+  .dash-panel { background: var(--paper); padding: 32px; }
+  .dash-panel-title {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink);
+    margin-bottom: 24px;
+    font-weight: 400;
+  }
+  .dash-chart {
+    height: 160px;
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+  }
+  .dash-bar {
+    flex: 1;
+    background: var(--accent);
+    opacity: 0.3;
+    transition: opacity .3s;
+    position: relative;
+  }
+  .dash-bar.alert { background: #c84a3c; opacity: 0.6; }
+  .dash-bar:hover { opacity: 1; }
+  .dash-bar-label {
+    position: absolute;
+    bottom: -22px;
+    left: 0; right: 0;
+    text-align: center;
+    font-size: 10px;
+    color: var(--muted);
+  }
+  .dash-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 13px;
+  }
+  .dash-list-item:last-child { border-bottom: none; }
+  .dash-list-sku { color: var(--muted); font-family: 'Courier New', monospace; font-size: 11px; }
+  .dash-list-pct { color: #c84a3c; font-weight: 500; }
+
+  /* ============ FOOTER ============ */
+  .footer { background: #111111; color: var(--bg); padding: 80px 48px 32px; }
+  .footer-top {
+    max-width: 1280px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr 1fr;
+    gap: 60px;
+    padding-bottom: 60px;
+    border-bottom: 1px solid rgba(247,245,242,0.08);
+  }
+  .footer-brand {
+    font-family: var(--display);
+    font-size: 32px;
+    font-weight: 300;
+    margin-bottom: 16px;
+  }
+  .footer-tagline {
+    font-size: 11px;
+    color: rgba(247,245,242,0.45);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+  }
+  .footer-desc {
+    font-size: 14px;
+    color: rgba(247,245,242,0.55);
+    line-height: 1.7;
+    max-width: 320px;
+  }
+  .footer-col h5 {
+    font-size: 10px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--accent-soft);
+    margin-bottom: 20px;
+    font-weight: 400;
+  }
+  .footer-col a {
+    display: block;
+    color: rgba(247,245,242,0.6);
+    text-decoration: none;
+    font-size: 14px;
+    padding: 6px 0;
+    transition: color .2s;
+  }
+  .footer-col a:hover { color: var(--accent-soft); }
+  .footer-bottom {
+    max-width: 1280px;
+    margin: 32px auto 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+  .footer-copy {
+    font-size: 12px;
+    color: rgba(247,245,242,0.35);
+    letter-spacing: 0.04em;
+  }
+  .powered-by {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(247,245,242,0.5);
+    text-decoration: none;
+    padding: 10px 0;
+    transition: opacity .3s;
+  }
+  .powered-by:hover { opacity: 0.85; }
+  .powered-by img {
+    height: 36px;
+    background: #000;
+    padding: 6px 12px;
+    display: block;
+  }
+
+  /* ============ RESPONSIVO ============ */
+  @media (max-width: 1024px) {
+    .hero { padding: 140px 32px 100px; }
+    .value-grid { grid-template-columns: 1fr; }
+    .how-steps { grid-template-columns: 1fr 1fr; gap: 40px; }
+    .how-steps::before { display: none; }
+    .catalog-grid { grid-template-columns: repeat(3, 1fr); }
+    .result-content { grid-template-columns: 1fr; }
+    .result-visual { aspect-ratio: 3/4; max-height: 70vh; }
+    .dash-body { grid-template-columns: 1fr; }
+    .dash-grid { grid-template-columns: 1fr 1fr; }
+    .footer-top { grid-template-columns: 1fr 1fr; gap: 40px; }
+    .nav { padding: 20px 24px; }
+    .nav.scrolled { padding: 12px 24px; }
+    .nav-links { display: none; }
+    .strip-item { padding: 8px 28px; }
+  }
+  @media (max-width: 700px) {
+    .hero { padding: 120px 24px 80px; }
+    .hero-title { font-size: clamp(48px, 12vw, 72px); }
+    .section-title { font-size: clamp(36px, 8vw, 52px); }
+    .value { padding: 100px 24px; }
+    .value-card { padding: 48px 28px; }
+    .how { padding: 100px 24px; }
+    .try { padding: 100px 24px; }
+    .try-container { padding: 40px 24px; }
+    .field-row { grid-template-columns: 1fr; }
+    .upload-grid { grid-template-columns: 1fr; }
+    .fit-grid { grid-template-columns: 1fr; }
+    .result-info { padding: 32px 24px; }
+    .result-rec-size { font-size: 64px; }
+    .result-product-name { font-size: 28px; }
+    .dash-grid { grid-template-columns: 1fr; }
+    .footer { padding: 60px 24px 28px; }
+    .footer-top { grid-template-columns: 1fr; }
+    .strip { gap: 0; }
+    .strip-item { padding: 14px 20px; border-right: none !important; border-bottom: 1px solid rgba(255,255,255,0.08); width: 100%; justify-content: center; }
+    .catalog-header { padding: 32px 24px 20px; }
+    .catalog-title { font-size: 32px; }
+    .catalog-grid { grid-template-columns: repeat(2, 1fr); padding: 24px 16px; gap: 12px; }
+    .catalog-controls { flex-direction: column; align-items: stretch; }
+    .catalog-search { min-width: 0; }
+    .filter-pill { padding: 8px 16px; font-size: 10px; }
+    .product-card-body { padding: 12px; }
+    .product-card-name { font-size: 12px; min-height: 32px; }
+    .product-card-price { font-size: 15px; }
+    .overlay { padding: 12px; }
+    .overlay-close { width: 40px; height: 40px; top: 12px; right: 12px; }
+    .result-back { padding: 16px 24px; }
+    .loading-screen { padding: 60px 24px; }
+    .hero-actions { flex-direction: column; gap: 12px; }
+    .dashboard { padding: 100px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ NAV ============ -->
+<nav class="nav" id="main-nav">
+  <div class="nav-logo">
+    <svg class="nav-logo-mark" viewBox="0 0 32 28" fill="none">
+      <path d="M16 4 L16 7" stroke="#8B7B6B" stroke-width="1.3" stroke-linecap="round"/>
+      <path d="M16 7 C16 7 12 9 12 11 Q12 13 14 13 L18 13 Q20 13 20 11 C20 9 16 7 16 7 Z" stroke="#8B7B6B" stroke-width="1.3" fill="none"/>
+      <path d="M4 22 L28 22 L28 23 Q28 24 27 24 L5 24 Q4 24 4 23 Z" stroke="#8B7B6B" stroke-width="1.3" fill="none" stroke-linejoin="round"/>
+      <path d="M4 22 L16 13 L28 22" stroke="#8B7B6B" stroke-width="1.3" fill="none" stroke-linejoin="round"/>
+      <path d="M16 17.5 C15.2 16.7 13.5 16.7 13.5 18.2 C13.5 19.5 16 21 16 21 C16 21 18.5 19.5 18.5 18.2 C18.5 16.7 16.8 16.7 16 17.5 Z" stroke="#8B7B6B" stroke-width="1.2" fill="none"/>
+    </svg>
+    tamanhocerto
+  </div>
+  <div class="nav-links">
+    <a href="#como-funciona">Como funciona</a>
+    <a href="#provador">Provador</a>
+    <a href="#marcas">Para marcas</a>
+    <a href="#contato">Contato</a>
+  </div>
+  <button class="nav-cta" onclick="document.getElementById('provador').scrollIntoView({behavior:'smooth'})">Experimentar</button>
+</nav>
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="hero-eyebrow">
+    <div class="hero-eyebrow-text">
+      <span class="hero-eyebrow-line"></span>
+      <span>Tecnologia de caimento · IA + visão computacional</span>
+    </div>
+  </div>
+  <h1 class="hero-title">
+    <span class="line">A tecnologia que</span>
+    <span class="line"><em>veste</em> você</span>
+    <span class="line">como ninguém.</span>
+  </h1>
+  <p class="hero-sub reveal">
+    Mais do que recomendar um tamanho — entendemos o seu corpo, a modelagem da peça e o caimento que você gosta. Compre com a certeza de que vai vestir perfeito, em qualquer marca.
+  </p>
+  <div class="hero-actions reveal">
+    <button class="btn-primary" onclick="document.getElementById('provador').scrollIntoView({behavior:'smooth'})">
+      Descobrir meu tamanho
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="none"><path d="M1 6H15M15 6L10 1M15 6L10 11" stroke="currentColor" stroke-width="1.5"/></svg>
+    </button>
+    <button class="btn-ghost" onclick="document.getElementById('como-funciona').scrollIntoView({behavior:'smooth'})">Como funciona</button>
+  </div>
+  <div class="hero-stats">
+    <div class="hero-stats-line"></div>
+    <span class="hero-stats-text">−32% devoluções · 94% acurácia · 12 segundos</span>
+    <div class="hero-stats-line"></div>
+  </div>
+</section>
+
+<!-- ============ STRIP ============ -->
+<section class="strip">
+  <div class="strip-item"><span class="strip-num" data-target="-32" data-suffix="%">−32%</span> Redução de devoluções</div>
+  <div class="strip-item"><span class="strip-num" data-target="+68" data-suffix="%">+68%</span> Elogios de caimento</div>
+  <div class="strip-item"><span class="strip-num" data-target="94" data-suffix="%">94%</span> Acurácia média</div>
+  <div class="strip-item"><span class="strip-num" data-target="12" data-suffix="s">12s</span> Para descobrir seu tamanho</div>
+</section>
+
+<!-- ============ VALUE ============ -->
+<section class="value">
+  <div class="section-eyebrow reveal">Por que tamanhocerto</div>
+  <h2 class="section-title reveal">O fim do <em>cabe ou não cabe</em>.</h2>
+  <div class="value-grid">
+    <div class="value-card reveal reveal-child">
+      <div class="value-accent-line"></div>
+      <h3>Recomendação precisa</h3>
+      <p>Cruzamos suas medidas reais com a ficha técnica da peça — elasticidade, fit e tabela da marca — para indicar o tamanho que vai vestir como você gosta.</p>
+    </div>
+    <div class="value-card reveal reveal-child">
+      <div class="value-accent-line"></div>
+      <h3>Padronização de caimento</h3>
+      <p>Um selo que garante que o caimento e o padrão da modelagem são consistentes entre as peças e coleções da marca.</p>
+    </div>
+    <div class="value-card reveal reveal-child">
+      <div class="value-accent-line"></div>
+      <h3>Dados que transformam</h3>
+      <p>Estatísticas de devoluções, elogios e preferências que orientam a criação de produtos cada vez melhores, do design ao estoque.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ HOW ============ -->
+<section id="como-funciona" class="how">
+  <div class="section-eyebrow reveal">Em quatro passos</div>
+  <h2 class="section-title reveal">Simples como olhar no espelho.</h2>
+  <div class="how-steps">
+    <div class="step reveal reveal-child"><div class="step-circle">01</div><h4>Você nos conta</h4><p>Suas medidas com fotos rápidas e seguras.</p></div>
+    <div class="step reveal reveal-child"><div class="step-circle">02</div><h4>IA analisa</h4><p>Nossa visão computacional entende seu corpo e suas preferências.</p></div>
+    <div class="step reveal reveal-child"><div class="step-circle">03</div><h4>Escolha a peça</h4><p>Navegue no catálogo e veja seu tamanho ideal em cada produto.</p></div>
+    <div class="step reveal reveal-child"><div class="step-circle">04</div><h4>Compre certeiro</h4><p>Mais acertos, menos trocas, mais confiança.</p></div>
+  </div>
+</section>
+
+<!-- ============ TRY ============ -->
+<section id="provador" class="try">
+  <div class="section-eyebrow">O provador virtual</div>
+  <h2 class="section-title">Experimente <em>agora</em> com peças reais.</h2>
+
+  <div class="try-container">
+    <form id="fit-form" onsubmit="return false;">
+      <div class="field">
+        <span class="field-label">Suas medidas</span>
+        <div class="field-row">
+          <input class="input" type="number" id="altura" placeholder="Altura (cm)" value="168" min="140" max="210">
+          <input class="input" type="number" id="peso" placeholder="Peso (kg)" value="62" min="35" max="200">
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="field-row">
+          <input class="input" type="number" id="idade" placeholder="Idade" value="29" min="14" max="90">
+          <select class="select" id="genero">
+            <option value="feminino">Feminino</option>
+            <option value="masculino">Masculino</option>
+            <option value="outro">Outro / Prefiro não dizer</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <span class="field-label">Como você gosta que vista</span>
+        <div class="fit-grid">
+          <button type="button" class="fit-option" data-fit="justo">
+            <div class="fit-option-name">Justo</div>
+            <div class="fit-option-desc">marca o corpo</div>
+          </button>
+          <button type="button" class="fit-option active" data-fit="regular">
+            <div class="fit-option-name">Regular</div>
+            <div class="fit-option-desc">caimento ideal</div>
+          </button>
+          <button type="button" class="fit-option" data-fit="folgado">
+            <div class="fit-option-name">Folgado</div>
+            <div class="fit-option-desc">solto e confortável</div>
+          </button>
+        </div>
+      </div>
+
+      <div class="field">
+        <span class="field-label">Fotos para análise corporal (opcional, mas recomendado)</span>
+        <div class="upload-grid">
+          <label class="upload-box" for="photo-front">
+            <input type="file" id="photo-front" accept="image/*" hidden>
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="10" r="5" stroke="currentColor" stroke-width="1.4"/><path d="M6 28 Q6 18 16 18 Q26 18 26 28" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>
+            <div class="upload-box-label">Foto de frente</div>
+            <div class="upload-box-sub">roupa justa, fundo claro</div>
+          </label>
+          <label class="upload-box" for="photo-side">
+            <input type="file" id="photo-side" accept="image/*" hidden>
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><circle cx="18" cy="10" r="5" stroke="currentColor" stroke-width="1.4"/><path d="M10 28 Q10 18 18 18 Q24 18 24 28" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>
+            <div class="upload-box-label">Foto de lado</div>
+            <div class="upload-box-sub">perfil completo</div>
+          </label>
+        </div>
+      </div>
+
+      <label class="lgpd">
+        <input type="checkbox" id="lgpd" checked>
+        <div class="lgpd-text">
+          <strong>Conformidade LGPD.</strong> Suas fotos são processadas em ambiente seguro e <strong>descartadas após a extração das medidas</strong>. Armazenamos apenas dados anonimizados, com seu consentimento, para melhorar nossas recomendações.
+        </div>
+      </label>
+
+      <button type="submit" class="submit-btn" id="submit-btn">
+        Descobrir meu tamanho →
+      </button>
+    </form>
+  </div>
+</section>
+
+<!-- ============ OVERLAY (loading -> catalog -> result) ============ -->
+<div class="overlay" id="overlay">
+  <div class="overlay-modal">
+    <button class="overlay-close" onclick="closeOverlay()" aria-label="Fechar">✕</button>
+
+    <!-- 1. LOADING -->
+    <div class="loading-screen" id="loading-screen">
+      <div class="loading-icon">
+        <svg viewBox="0 0 80 60" fill="none">
+          <path d="M40 8 L40 14" stroke="#8B7B6B" stroke-width="2" stroke-linecap="round"/>
+          <path d="M40 14 C40 14 30 18 30 24 Q30 28 35 28 L45 28 Q50 28 50 24 C50 18 40 14 40 14 Z" stroke="#8B7B6B" stroke-width="2" fill="none"/>
+          <path d="M10 50 L70 50 L70 52 Q70 54 68 54 L12 54 Q10 54 10 52 Z" stroke="#8B7B6B" stroke-width="2" fill="none" stroke-linejoin="round"/>
+          <path d="M10 50 L40 28 L70 50" stroke="#8B7B6B" stroke-width="2" fill="none" stroke-linejoin="round"/>
+          <path d="M40 38 C38 36 34 36 34 39.5 C34 43 40 46 40 46 C40 46 46 43 46 39.5 C46 36 42 36 40 38 Z" stroke="#8B7B6B" stroke-width="1.8" fill="none"/>
+        </svg>
+      </div>
+      <h3>Analisando seu corpo</h3>
+      <p>Estimando suas medidas e preparando o catálogo</p>
+      <div class="loading-steps">
+        <div class="loading-step" id="step-1"><div class="dot"></div>Processando dimensões corporais</div>
+        <div class="loading-step" id="step-2"><div class="dot"></div>Estimando medidas (busto, cintura, quadril)</div>
+        <div class="loading-step" id="step-3"><div class="dot"></div>Carregando catálogo de peças disponíveis</div>
+        <div class="loading-step" id="step-4"><div class="dot"></div>Cruzando com sua preferência de caimento</div>
+        <div class="loading-step" id="step-5"><div class="dot"></div>Pronto para você escolher</div>
+      </div>
+    </div>
+
+    <!-- 2. CATÁLOGO -->
+    <div class="catalog-screen" id="catalog-screen">
+      <div class="catalog-header">
+        <div class="catalog-brand-tag">Catálogo Farm Rio</div>
+        <h2 class="catalog-title">Escolha a peça</h2>
+        <p class="catalog-sub">Selecione a peça para descobrir seu tamanho ideal.</p>
+        <div class="catalog-controls">
+          <div class="catalog-filters" id="catalog-filters">
+            <button class="filter-pill active" data-cat="todos">Todos</button>
+            <button class="filter-pill" data-cat="vestido">Vestidos</button>
+            <button class="filter-pill" data-cat="blusa">Blusas</button>
+            <button class="filter-pill" data-cat="calca">Calças</button>
+            <button class="filter-pill" data-cat="short">Shorts</button>
+          </div>
+          <div class="catalog-search">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.2"/><path d="M9.5 9.5L13 13" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            <input type="text" id="catalog-search-input" placeholder="Buscar peça...">
+          </div>
+        </div>
+      </div>
+      <div class="catalog-grid" id="catalog-grid"></div>
+    </div>
+
+    <!-- 3. RESULTADO -->
+    <div class="result-screen" id="result-screen">
+      <button class="result-back" onclick="showCatalog()">
+        <svg width="14" height="10" viewBox="0 0 14 10" fill="none"><path d="M13 5H1M1 5L5 1M1 5L5 9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        Voltar ao catálogo
+      </button>
+      <div class="result-content">
+        <div class="result-visual">
+          <span class="result-test-badge">Modo demonstração</span>
+          <img id="result-img" alt="">
+          <div class="result-user-photo" id="result-user-photo">
+            <div style="background:linear-gradient(135deg,#B5A898,#8B7B6B);display:flex;align-items:center;justify-content:center;color:#F7F5F2;font-family:var(--display);font-size:32px;font-weight:300;">você</div>
+            <div class="result-user-photo-label">sua foto</div>
+          </div>
+        </div>
+        <div class="result-info">
+          <div>
+            <div class="result-brand" id="result-brand">Farm Rio</div>
+            <h2 class="result-product-name" id="result-product-name"></h2>
+            <p class="result-product-desc" id="result-product-desc"></p>
+            <div class="result-price">
+              <span id="result-price"></span>
+              <span class="result-price-installments" id="result-installments"></span>
+            </div>
+
+            <div class="result-recommendation">
+              <div class="result-rec-label">Seu tamanho ideal</div>
+              <div class="result-rec-size" id="result-size"></div>
+              <div class="result-rec-fit" id="result-fit"></div>
+              <div class="result-rec-confidence">
+                <span class="confidence-text" id="confidence-text">94%</span>
+                <div class="confidence-bar"><div class="confidence-fill" id="confidence-fill"></div></div>
+                <span style="font-size:10px; color: rgba(247,245,242,0.4); letter-spacing:0.08em; text-transform:uppercase;">confiança</span>
+              </div>
+            </div>
+
+            <div class="result-justification">
+              <div class="result-just-title">Por que esse tamanho</div>
+              <p class="result-just-text" id="result-justification"></p>
+            </div>
+
+            <div class="result-measurements" id="result-measurements"></div>
+          </div>
+
+          <div class="result-actions">
+            <a id="result-cta" class="result-btn result-btn-primary" href="#" target="_blank" rel="noopener">
+              Ver na loja Farm
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 9L9 3M9 3H4M9 3V8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            </a>
+            <button class="result-btn result-btn-secondary" onclick="showCatalog()">Outra peça</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============ DASHBOARD ============ -->
+<section id="marcas" class="dashboard">
+  <div class="section-eyebrow reveal">Para marcas</div>
+  <h2 class="section-title reveal">Decisões guiadas por <em>dados reais</em> de caimento.</h2>
+  <div class="dashboard-mock reveal">
+    <div class="dash-header">
+      <div class="dash-header-title">Painel Farm Rio · Caimento</div>
+      <div class="dash-header-tag">Live · últimos 30 dias</div>
+    </div>
+    <div class="dash-grid">
+      <div class="dash-metric">
+        <div class="dash-metric-label">Recomendações</div>
+        <div class="dash-metric-value">48.2k</div>
+        <div class="dash-metric-trend">↑ 18% vs mês anterior</div>
+      </div>
+      <div class="dash-metric">
+        <div class="dash-metric-label">Taxa de devolução</div>
+        <div class="dash-metric-value">6.1%</div>
+        <div class="dash-metric-trend">↓ 32% após selo</div>
+      </div>
+      <div class="dash-metric">
+        <div class="dash-metric-label">NPS de caimento</div>
+        <div class="dash-metric-value">72</div>
+        <div class="dash-metric-trend">↑ 68% elogios</div>
+      </div>
+      <div class="dash-metric">
+        <div class="dash-metric-label">SKUs em alerta</div>
+        <div class="dash-metric-value">7</div>
+        <div class="dash-metric-trend down">3 críticos &gt; 30%</div>
+      </div>
+    </div>
+    <div class="dash-body">
+      <div class="dash-panel">
+        <div class="dash-panel-title">Distribuição de tamanhos recomendados</div>
+        <div class="dash-chart">
+          <div class="dash-bar" style="height:30%"><div class="dash-bar-label">PP</div></div>
+          <div class="dash-bar" style="height:55%"><div class="dash-bar-label">P</div></div>
+          <div class="dash-bar" style="height:85%"><div class="dash-bar-label">M</div></div>
+          <div class="dash-bar" style="height:78%"><div class="dash-bar-label">G</div></div>
+          <div class="dash-bar" style="height:45%"><div class="dash-bar-label">GG</div></div>
+          <div class="dash-bar alert" style="height:62%"><div class="dash-bar-label">38</div></div>
+          <div class="dash-bar" style="height:90%"><div class="dash-bar-label">40</div></div>
+          <div class="dash-bar" style="height:72%"><div class="dash-bar-label">42</div></div>
+          <div class="dash-bar" style="height:48%"><div class="dash-bar-label">44</div></div>
+        </div>
+      </div>
+      <div class="dash-panel">
+        <div class="dash-panel-title">SKUs com inconsistência de sizing</div>
+        <div class="dash-list-item"><div><div>Vestido Midi Borboleta</div><div class="dash-list-sku">FR-VM-8821</div></div><div class="dash-list-pct">38%</div></div>
+        <div class="dash-list-item"><div><div>Calça Pantalona Linho</div><div class="dash-list-sku">FR-CP-7733</div></div><div class="dash-list-pct">34%</div></div>
+        <div class="dash-list-item"><div><div>Top Estampado Tropical</div><div class="dash-list-sku">FR-TS-4419</div></div><div class="dash-list-pct">31%</div></div>
+        <div class="dash-list-item"><div><div>Macacão Verde Flor</div><div class="dash-list-sku">FR-MC-6612</div></div><div class="dash-list-pct">28%</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer id="contato" class="footer">
+  <div class="footer-top">
+    <div>
+      <div class="footer-brand">tamanhocerto</div>
+      <div class="footer-tagline">— vestiu perfeito</div>
+      <p class="footer-desc">A tecnologia que entende seu corpo, respeita a modelagem da marca e entrega o caimento ideal para você. Do código ao closet.</p>
+    </div>
+    <div class="footer-col">
+      <h5>Produto</h5>
+      <a href="#provador">Provador virtual</a>
+      <a href="#como-funciona">Como funciona</a>
+      <a href="#marcas">Para marcas</a>
+      <a href="#">API e integrações</a>
+    </div>
+    <div class="footer-col">
+      <h5>Empresa</h5>
+      <a href="#">Sobre</a>
+      <a href="#">Manifesto</a>
+      <a href="#">Carreiras</a>
+      <a href="#">Imprensa</a>
+    </div>
+    <div class="footer-col">
+      <h5>Legal</h5>
+      <a href="#">Privacidade · LGPD</a>
+      <a href="#">Termos de uso</a>
+      <a href="#">Política de cookies</a>
+      <a href="#">Contato</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="footer-copy">© 2026 tamanhocerto · todos os direitos reservados</div>
+    <a href="https://produs.com.br" target="_blank" class="powered-by">
+      <span>Powered by</span>
+      <img src="img/logo-produs.png" alt="Pródus Intelligence">
+    </a>
+  </div>
+</footer>
+
+<script>
+  // ============ CATÁLOGO DE PRODUTOS REAIS (Farm Rio) ============
+  const PRODUCTS = [
+    {
+      id: 'vestido-midi-mojito',
+      cat: 'vestido',
+      name: 'Vestido Midi Estampado Mojito',
+      desc: 'Vestido midi com estampa floral verde. Tecido fluido com caimento solto na barra.',
+      img: 'img/produtos/vestido-midi-mojito.jpg',
+      price: 'R$ 498,00',
+      installments: '6× R$ 83,00',
+      url: 'https://www.farmrio.com.br/produtos/vestido',
+      sizes: ['PP','P','M','G','GG'],
+      fitTag: 'Regular',
+      sizing: {
+        regular: { size: 'P', fit: 'Caimento solto · barra ampla com caimento fluido', confidence: 94 },
+        justo:   { size: 'PP', fit: 'Mais ajustado no busto', confidence: 88 },
+        folgado: { size: 'M', fit: 'Bastante folga, caimento aéreo', confidence: 90 }
+      },
+      brandRange: { waist: '64-68', bust: '84-88' },
+      elastane: '3'
+    },
+    {
+      id: 'vestido-midi-praia',
+      cat: 'vestido',
+      name: 'Vestido Longo Estampado Inverno Tropical',
+      desc: 'Vestido longo com mangas e estampa Inverno Tropical. Silhueta ampla e fluida.',
+      img: 'img/produtos/vestido-midi-praia.jpg',
+      price: 'R$ 639,00',
+      installments: '6× R$ 106,50',
+      url: 'https://www.farmrio.com.br/produtos/vestido',
+      sizes: ['PP','P','M','G','GG'],
+      fitTag: 'Folgado',
+      sizing: {
+        regular: { size: 'P', fit: 'Silhueta ampla com folga generosa', confidence: 92 },
+        justo:   { size: 'PP', fit: 'Justo no busto, ampla embaixo', confidence: 87 },
+        folgado: { size: 'M', fit: 'Caimento muito leve e solto', confidence: 91 }
+      },
+      brandRange: { waist: '64-68', bust: '84-88' },
+      elastane: '0'
+    },
+    {
+      id: 'vestido-midi-elsa',
+      cat: 'vestido',
+      name: 'Vestido Midi Estampado Elsa',
+      desc: 'Vestido midi com alças e estampa floral azul. Modelagem ajustada no busto.',
+      img: 'img/produtos/vestido-midi-elsa.jpg',
+      price: 'R$ 559,00',
+      installments: '6× R$ 93,16',
+      url: 'https://www.farmrio.com.br/produtos/vestido',
+      sizes: ['PP','P','M','G','GG'],
+      fitTag: 'Regular',
+      sizing: {
+        regular: { size: 'P', fit: 'Ajuste no busto, fluidez no quadril', confidence: 93 },
+        justo:   { size: 'PP', fit: 'Marca o corpo no busto e cintura', confidence: 89 },
+        folgado: { size: 'M', fit: 'Confortável, com folga no busto', confidence: 90 }
+      },
+      brandRange: { waist: '64-68', bust: '84-88' },
+      elastane: '4'
+    },
+    {
+      id: 'vestido-longo-back',
+      cat: 'vestido',
+      name: 'Vestido Longo Bordado Costas Nuas',
+      desc: 'Vestido longo preto com bordado escamas e costas nuas. Tecido encorpado de algodão.',
+      img: 'img/produtos/vestido-longo-black-back.jpg',
+      price: 'R$ 679,00',
+      installments: '6× R$ 113,16',
+      url: 'https://www.farmrio.com.br/produtos/vestido',
+      sizes: ['PP','P','M','G','GG'],
+      fitTag: 'Regular',
+      sizing: {
+        regular: { size: 'P', fit: 'Ajuste no busto, evasê no quadril', confidence: 91 },
+        justo:   { size: 'PP', fit: 'Mais justo, marca a silhueta', confidence: 87 },
+        folgado: { size: 'M', fit: 'Mais espaço no busto e tronco', confidence: 89 }
+      },
+      brandRange: { waist: '64-68', bust: '84-88' },
+      elastane: '2'
+    },
+    {
+      id: 'vestido-longo-fish',
+      cat: 'vestido',
+      name: 'Vestido Longo Bordado Peixe',
+      desc: 'Vestido longo preto com bordado de peixe no busto e modelagem evasê.',
+      img: 'img/produtos/vestido-longo-black-fish.jpg',
+      price: 'R$ 698,00',
+      installments: '6× R$ 116,33',
+      url: 'https://www.farmrio.com.br/produtos/vestido',
+      sizes: ['PP','P','M','G','GG'],
+      fitTag: 'Folgado',
+      sizing: {
+        regular: { size: 'P', fit: 'Modelagem evasê confortável', confidence: 92 },
+        justo:   { size: 'PP', fit: 'Justo no busto, fluido embaixo', confidence: 86 },
+        folgado: { size: 'M', fit: 'Muito espaço, ultra confortável', confidence: 93 }
+      },
+      brandRange: { waist: '64-68', bust: '84-88' },
+      elastane: '2'
+    },
+    {
+      id: 'vestido-curto-abstrato',
+      cat: 'vestido',
+      name: 'Vestido Midi Estampado Arte Abstrata',
+      desc: 'Vestido midi com estampa abstrata colorida. Caimento amplo, ideal para o dia.',
+      img: 'img/produtos/vestido-curto-abstrato.jpg',
+      price: 'R$ 459,00',
+      installments: '6× R$ 76,50',
+      url: 'https://www.farmrio.com.br/produtos/vestido',
+      sizes: ['PP','P','M','G','GG'],
+      fitTag: 'Folgado',
+      sizing: {
+        regular: { size: 'M', fit: 'Caimento solto e confortável', confidence: 94 },
+        justo:   { size: 'P', fit: 'Mais próximo ao corpo', confidence: 88 },
+        folgado: { size: 'G', fit: 'Muito ampla, caimento oversized', confidence: 91 }
+      },
+      brandRange: { waist: '70-74', bust: '90-94' },
+      elastane: '5'
+    },
+    {
+      id: 'vestido-conjunto',
+      cat: 'vestido',
+      name: 'Conjunto Cropped + Saia Marinho',
+      desc: 'Conjunto duas peças com estampa náutica em viscose. Tecido leve e fluido.',
+      img: 'img/produtos/vestido-conjunto-praia.jpg',
+      price: 'R$ 798,00',
+      installments: '6× R$ 133,00',
+      url: 'https://www.farmrio.com.br/produtos/vestido',
+      sizes: ['PP','P','M','G','GG'],
+      fitTag: 'Regular',
+      sizing: {
+        regular: { size: 'P', fit: 'Caimento fluido, ajuste leve na cintura', confidence: 92 },
+        justo:   { size: 'PP', fit: 'Mais ajustado no top', confidence: 87 },
+        folgado: { size: 'M', fit: 'Folga adicional no top', confidence: 89 }
+      },
+      brandRange: { waist: '64-68', bust: '84-88' },
+      elastane: '2'
+    },
+    {
+      id: 'blusa-colagem',
+      cat: 'blusa',
+      name: 'Blusa Manga Curta Colagem Tropical',
+      desc: 'Blusa em malha com estampa colagem. Modelagem ajustada com gola alta.',
+      img: 'img/produtos/blusa-cropped-colagem.jpg',
+      price: 'R$ 259,00',
+      installments: '3× R$ 86,33',
+      url: 'https://www.farmrio.com.br/produtos/blusa',
+      sizes: ['PP','P','M','G','GG'],
+      fitTag: 'Justo',
+      sizing: {
+        regular: { size: 'P', fit: 'Ajuste segunda pele, malha com elasticidade', confidence: 95 },
+        justo:   { size: 'PP', fit: 'Bastante justa, marca o corpo', confidence: 91 },
+        folgado: { size: 'M', fit: 'Mais espaço, caimento mais solto', confidence: 88 }
+      },
+      brandRange: { bust: '84-88' },
+      elastane: '8'
+    },
+    {
+      id: 'blusa-flora',
+      cat: 'blusa',
+      name: 'Blusa Cropped Manga Curta Flora Negra',
+      desc: 'Cropped em malha texturizada com estampa floral preto e branco. Gola alta.',
+      img: 'img/produtos/blusa-cropped-flora.jpg',
+      price: 'R$ 279,00',
+      installments: '3× R$ 93,00',
+      url: 'https://www.farmrio.com.br/produtos/blusa',
+      sizes: ['PP','P','M','G','GG'],
+      fitTag: 'Justo',
+      sizing: {
+        regular: { size: 'P', fit: 'Ajuste ao corpo, comprimento cropped', confidence: 94 },
+        justo:   { size: 'PP', fit: 'Segunda pele, bastante justa', confidence: 90 },
+        folgado: { size: 'M', fit: 'Mais conforto no busto', confidence: 87 }
+      },
+      brandRange: { bust: '84-88' },
+      elastane: '7'
+    },
+    {
+      id: 'blusa-festa',
+      cat: 'blusa',
+      name: 'Blusa Cropped Manga Curta Festa do Mar',
+      desc: 'Cropped em malha rib com estampa Festa do Mar. Gola alta, manga curta.',
+      img: 'img/produtos/blusa-cropped-festa.jpg',
+      price: 'R$ 269,00',
+      installments: '3× R$ 89,66',
+      url: 'https://www.farmrio.com.br/produtos/blusa',
+      sizes: ['PP','P','M','G','GG'],
+      fitTag: 'Justo',
+      sizing: {
+        regular: { size: 'P', fit: 'Ajustada, caimento cropped na cintura', confidence: 94 },
+        justo:   { size: 'PP', fit: 'Bem marcada no corpo', confidence: 89 },
+        folgado: { size: 'M', fit: 'Mais espaço, menos cropped', confidence: 87 }
+      },
+      brandRange: { bust: '84-88' },
+      elastane: '7'
+    },
+    {
+      id: 'calca-wide-leg',
+      cat: 'calca',
+      name: 'Calça Wide Leg Patchwork Jeans',
+      desc: 'Calça wide leg em jeans patchwork com recortes em branco. Cintura média.',
+      img: 'img/produtos/calca-wide-leg.jpg',
+      price: 'R$ 749,00',
+      installments: '6× R$ 124,83',
+      url: 'https://www.farmrio.com.br/produtos/calca-jeans',
+      sizes: ['36','38','40','42','44','46'],
+      fitTag: 'Regular',
+      sizing: {
+        regular: { size: '38', fit: 'Caimento solto, perna ampla, fecha confortável na cintura', confidence: 94 },
+        justo:   { size: '36', fit: 'Marca a cintura, perna mantém o wide', confidence: 89 },
+        folgado: { size: '40', fit: 'Cintura folgada, perna bem ampla', confidence: 90 }
+      },
+      brandRange: { waist: '68-72', hip: '94-98' },
+      elastane: '2'
+    },
+    {
+      id: 'short-wonder',
+      cat: 'short',
+      name: 'Short Estampado Wonder Rio',
+      desc: 'Short de cintura alta em viscolinho com estampa floral. Acabamento em crochê.',
+      img: 'img/produtos/short-wonder-rio.jpg',
+      price: 'R$ 349,00',
+      installments: '3× R$ 116,33',
+      url: 'https://www.farmrio.com.br/produtos/shorts',
+      sizes: ['PP','P','M','G','GG'],
+      fitTag: 'Regular',
+      sizing: {
+        regular: { size: 'P', fit: 'Cintura alta marcada, perna com leve folga', confidence: 93 },
+        justo:   { size: 'PP', fit: 'Ajuste na cintura e quadril', confidence: 88 },
+        folgado: { size: 'M', fit: 'Mais espaço no quadril', confidence: 89 }
+      },
+      brandRange: { waist: '64-68', hip: '90-94' },
+      elastane: '3'
+    },
+    {
+      id: 'short-fraga',
+      cat: 'short',
+      name: 'Short Cintura Alta Bordado Floral',
+      desc: 'Short em algodão com bordado floral colorido e cinto fivela. Cintura alta.',
+      img: 'img/produtos/short-fraga.jpg',
+      price: 'R$ 469,00',
+      installments: '4× R$ 117,25',
+      url: 'https://www.farmrio.com.br/produtos/shorts',
+      sizes: ['PP','P','M','G','GG'],
+      fitTag: 'Regular',
+      sizing: {
+        regular: { size: 'P', fit: 'Cintura alta com cinto, leve folga na barra', confidence: 92 },
+        justo:   { size: 'PP', fit: 'Bem ajustado na cintura', confidence: 88 },
+        folgado: { size: 'M', fit: 'Mais folgado na cintura e perna', confidence: 87 }
+      },
+      brandRange: { waist: '64-68', hip: '90-94' },
+      elastane: '0'
+    }
+  ];
+
+  // ============ STATE ============
+  let userFit = 'regular';
+  let userPhotoFront = null;
+  let activeCategory = 'todos';
+  let searchTerm = '';
+
+  // ============ FIT TOGGLE ============
+  document.querySelectorAll('.fit-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.fit-option').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      userFit = btn.dataset.fit;
+    });
+  });
+
+  // ============ UPLOAD ============
+  function setupPhotoUpload(inputId) {
+    const input = document.getElementById(inputId);
+    const box = input.closest('.upload-box');
+    input.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        box.classList.add('has-image');
+        const oldImg = box.querySelector('img');
+        if (oldImg) oldImg.remove();
+        const oldCheck = box.querySelector('.upload-check');
+        if (oldCheck) oldCheck.remove();
+        const img = document.createElement('img');
+        img.src = ev.target.result;
+        box.appendChild(img);
+        const check = document.createElement('div');
+        check.className = 'upload-check';
+        check.innerHTML = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7L6 11L12 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+        box.appendChild(check);
+        if (inputId === 'photo-front') userPhotoFront = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+  setupPhotoUpload('photo-front');
+  setupPhotoUpload('photo-side');
+
+  // ============ SUBMIT FORM ============
+  document.getElementById('fit-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (!document.getElementById('lgpd').checked) {
+      alert('Por favor, aceite os termos de privacidade LGPD para continuar.');
+      return;
+    }
+    openOverlayWithLoading();
+  });
+
+  // ============ OVERLAY FLOW ============
+  function openOverlayWithLoading() {
+    const overlay = document.getElementById('overlay');
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+
+    showLoading();
+
+    // Reset steps
+    for (let i = 1; i <= 5; i++) {
+      document.getElementById('step-' + i).classList.remove('done');
+    }
+
+    // Animate steps
+    [1,2,3,4,5].forEach((n, i) => {
+      setTimeout(() => {
+        const el = document.getElementById('step-' + n);
+        if (el) el.classList.add('done');
+      }, 350 + i * 380);
+    });
+
+    // Show catalog after loading
+    setTimeout(() => {
+      showCatalog();
+    }, 2400);
+  }
+
+  function showLoading() {
+    document.getElementById('loading-screen').classList.remove('hidden');
+    document.getElementById('catalog-screen').classList.remove('show');
+    document.getElementById('result-screen').classList.remove('show');
+  }
+
+  function showCatalog() {
+    document.getElementById('loading-screen').classList.add('hidden');
+    document.getElementById('catalog-screen').classList.add('show');
+    document.getElementById('result-screen').classList.remove('show');
+    renderCatalog();
+    // Scroll modal back to top
+    document.querySelector('.overlay-modal').scrollIntoView({behavior:'smooth', block:'start'});
+    document.getElementById('overlay').scrollTop = 0;
+  }
+
+  function showResult(productId) {
+    const product = PRODUCTS.find(p => p.id === productId);
+    if (!product) return;
+
+    document.getElementById('loading-screen').classList.add('hidden');
+    document.getElementById('catalog-screen').classList.remove('show');
+    document.getElementById('result-screen').classList.add('show');
+
+    // Calc measurements from user input
+    const altura = parseInt(document.getElementById('altura').value) || 168;
+    const peso = parseInt(document.getElementById('peso').value) || 62;
+    const cintura = Math.round(58 + (peso - 50) * 0.6);
+    const quadril = Math.round(86 + (peso - 50) * 0.55);
+    const busto = Math.round(82 + (peso - 50) * 0.5);
+
+    // Get sizing for user's fit preference
+    const sizing = product.sizing[userFit] || product.sizing.regular;
+
+    // Render product
+    document.getElementById('result-img').src = product.img;
+    document.getElementById('result-img').alt = product.name;
+    document.getElementById('result-brand').textContent = 'Farm Rio';
+    document.getElementById('result-product-name').textContent = product.name;
+    document.getElementById('result-product-desc').textContent = product.desc;
+    document.getElementById('result-price').textContent = product.price;
+    document.getElementById('result-installments').textContent = 'ou ' + product.installments;
+    document.getElementById('result-size').textContent = sizing.size;
+    document.getElementById('result-fit').textContent = sizing.fit;
+    document.getElementById('confidence-text').textContent = sizing.confidence + '%';
+
+    const fill = document.getElementById('confidence-fill');
+    fill.classList.remove('fill');
+    fill.style.setProperty('--conf', sizing.confidence / 100);
+    setTimeout(() => fill.classList.add('fill'), 200);
+
+    // Justification
+    const just = generateJustification(product, sizing, altura, peso, cintura, quadril, busto);
+    document.getElementById('result-justification').textContent = '"' + just + '"';
+
+    // Measurements
+    const measurementsEl = document.getElementById('result-measurements');
+    measurementsEl.innerHTML = '';
+    if (product.cat === 'calca' || product.cat === 'short') {
+      measurementsEl.innerHTML = `
+        <div class="measurement"><div class="measurement-label">Cintura estimada</div><div class="measurement-value">${cintura}<span>cm</span></div></div>
+        <div class="measurement"><div class="measurement-label">Quadril estimado</div><div class="measurement-value">${quadril}<span>cm</span></div></div>
+        <div class="measurement"><div class="measurement-label">Cintura tam. ${sizing.size}</div><div class="measurement-value">${product.brandRange.waist}<span>cm</span></div></div>
+        <div class="measurement"><div class="measurement-label">Elasticidade</div><div class="measurement-value">${product.elastane}<span>% elastano</span></div></div>
+      `;
+    } else {
+      measurementsEl.innerHTML = `
+        <div class="measurement"><div class="measurement-label">Busto estimado</div><div class="measurement-value">${busto}<span>cm</span></div></div>
+        <div class="measurement"><div class="measurement-label">Cintura estimada</div><div class="measurement-value">${cintura}<span>cm</span></div></div>
+        <div class="measurement"><div class="measurement-label">Busto tam. ${sizing.size}</div><div class="measurement-value">${product.brandRange.bust || '—'}<span>cm</span></div></div>
+        <div class="measurement"><div class="measurement-label">Elasticidade</div><div class="measurement-value">${product.elastane}<span>% elastano</span></div></div>
+      `;
+    }
+
+    // CTA URL
+    document.getElementById('result-cta').href = product.url;
+
+    // User photo
+    if (userPhotoFront) {
+      const photoEl = document.getElementById('result-user-photo');
+      photoEl.innerHTML = `<img src="${userPhotoFront}" alt="Sua foto"><div class="result-user-photo-label">sua foto</div>`;
+    }
+
+    // Scroll top
+    document.querySelector('.overlay-modal').scrollIntoView({behavior:'smooth', block:'start'});
+    document.getElementById('overlay').scrollTop = 0;
+  }
+
+  function generateJustification(product, sizing, altura, peso, cintura, quadril, busto) {
+    const fitName = { justo: 'justo', regular: 'regular', folgado: 'folgado' }[userFit];
+    if (product.cat === 'calca' || product.cat === 'short') {
+      return `Com ${altura} cm e ${peso} kg, sua cintura estimada (${cintura} cm) se encaixa na faixa do ${sizing.size} (${product.brandRange.waist} cm). A peça tem ${product.elastane}% de elastano, garantindo o caimento ${fitName} que você prefere sem comprometer a estrutura.`;
+    } else {
+      return `Com ${altura} cm e ${peso} kg, seu busto estimado (${busto} cm) está dentro da faixa do ${sizing.size} (${product.brandRange.bust || 'padrão'} cm). A modelagem entrega o caimento ${fitName} que você prefere, considerando ${product.elastane}% de elastano no tecido.`;
+    }
+  }
+
+  // ============ CATÁLOGO RENDER ============
+  function renderCatalog() {
+    const grid = document.getElementById('catalog-grid');
+    const filtered = PRODUCTS.filter(p => {
+      const catMatch = activeCategory === 'todos' || p.cat === activeCategory;
+      const searchMatch = !searchTerm || p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.desc.toLowerCase().includes(searchTerm.toLowerCase());
+      return catMatch && searchMatch;
+    });
+
+    if (filtered.length === 0) {
+      grid.innerHTML = '<div class="catalog-empty">Nenhuma peça encontrada.</div>';
+      return;
+    }
+
+    grid.innerHTML = filtered.map(p => {
+      const sizing = p.sizing[userFit] || p.sizing.regular;
+      const sizesHtml = p.sizes.map(s => `<span class="size-chip">${s}</span>`).join('');
+      return `
+        <div class="product-card" onclick="showResult('${p.id}')">
+          <div class="product-card-image">
+            <span class="product-card-brand">FARM RIO</span>
+            <span class="product-card-test-badge">Teste</span>
+            <img src="${p.img}" alt="${p.name}" loading="lazy">
+            <span class="product-card-fit-tag">${p.fitTag}</span>
+          </div>
+          <div class="product-card-body">
+            <div class="product-card-name">${p.name}</div>
+            <div class="product-card-desc">${p.desc}</div>
+            <div class="product-card-footer">
+              <div class="product-card-price">${p.price}</div>
+              <div class="product-card-sizes">${sizesHtml}</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Filter pills
+  document.querySelectorAll('.filter-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      activeCategory = pill.dataset.cat;
+      renderCatalog();
+    });
+  });
+
+  // Search input
+  document.getElementById('catalog-search-input').addEventListener('input', (e) => {
+    searchTerm = e.target.value;
+    renderCatalog();
+  });
+
+  // ============ CLOSE ============
+  function closeOverlay() {
+    document.getElementById('overlay').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  document.getElementById('overlay').addEventListener('click', (e) => {
+    if (e.target.id === 'overlay') closeOverlay();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeOverlay();
+  });
+
+  // ============ NAV SCROLL ============
+  window.addEventListener('scroll', () => {
+    const nav = document.querySelector('.nav');
+    if (window.pageYOffset > 60) {
+      nav.classList.add('scrolled');
+    } else {
+      nav.classList.remove('scrolled');
+    }
+  });
+
+  // ============ REVEAL (Intersection Observer) ============
+  const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        revealObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.12 });
+
+  document.querySelectorAll('.reveal').forEach(el => {
+    revealObserver.observe(el);
+  });
+
+  // ============ COUNT-UP (strip numbers) ============
+  const stripObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.querySelectorAll('.strip-num').forEach(numEl => {
+          const raw = numEl.textContent;
+          const suffix = numEl.dataset.suffix || '';
+          const prefix = raw.startsWith('−') ? '−' : (raw.startsWith('+') ? '+' : '');
+          const target = Math.abs(parseInt(numEl.dataset.target || raw));
+          let start = 0;
+          const duration = 1200;
+          const step = Math.ceil(target / (duration / 16));
+          const interval = setInterval(() => {
+            start += step;
+            if (start >= target) {
+              start = target;
+              clearInterval(interval);
+            }
+            numEl.textContent = prefix + start + suffix;
+          }, 16);
+        });
+        stripObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.5 });
+
+  document.querySelectorAll('.strip').forEach(el => stripObserver.observe(el));
+</script>
+
+</body>
+</html>
