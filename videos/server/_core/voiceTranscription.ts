@@ -141,6 +141,11 @@ export async function transcribeAudio(
   }
 }
 
+// Limite de tamanho de arquivo da Groq é ~25MB. Usamos blocos de 8 min:
+// wav 16kHz mono s16le ≈ 32KB/s → 8min ≈ 15MB, com folga sob o limite.
+const GROQ_CHUNK_SECONDS = 480;
+const GROQ_MAX_BYTES = 24 * 1024 * 1024;
+
 // ---- Provider: Groq (Whisper hospedado, API compatível com OpenAI) ----
 async function transcribeGroq(
   audioWav: string,
@@ -150,9 +155,64 @@ async function transcribeGroq(
     return { error: "GROQ_API_KEY não configurada", code: "SERVICE_ERROR" };
   }
 
-  const buf = await fs.readFile(audioWav);
-  // Limite da Groq é ~25MB; áudio wav 16kHz mono ≈ 1,9MB/min, então cobre ~13min.
-  // Para arquivos maiores, considere fatiar (não implementado aqui).
+  const stat = await fs.stat(audioWav);
+
+  // Áudio pequeno: uma única requisição.
+  if (stat.size <= GROQ_MAX_BYTES) {
+    return groqTranscribeFile(audioWav, options, 0);
+  }
+
+  // Áudio grande: fatia em blocos de GROQ_CHUNK_SECONDS e transcreve cada um.
+  const workDir = path.dirname(audioWav);
+  const pattern = path.join(workDir, "chunk_%03d.wav");
+  const seg = await run(
+    ENV.ffmpegPath,
+    ["-y", "-i", audioWav, "-f", "segment", "-segment_time", String(GROQ_CHUNK_SECONDS),
+     "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le", pattern],
+    { timeoutMs: 15 * 60 * 1000 },
+  );
+  if (seg.code !== 0) {
+    return { error: "Falha ao fatiar o áudio", code: "SERVICE_ERROR", details: seg.stderr.slice(-1000) };
+  }
+
+  const chunks = (await fs.readdir(workDir))
+    .filter(f => /^chunk_\d+\.wav$/.test(f))
+    .sort()
+    .map(f => path.join(workDir, f));
+
+  if (chunks.length === 0) {
+    return { error: "Nenhum bloco de áudio gerado", code: "SERVICE_ERROR" };
+  }
+
+  const texts: string[] = [];
+  const segments: WhisperSegment[] = [];
+  let segId = 0;
+  for (let i = 0; i < chunks.length; i++) {
+    const offset = i * GROQ_CHUNK_SECONDS;
+    const part = await groqTranscribeFile(chunks[i], options, offset);
+    if ("error" in part) {
+      return { ...part, details: `bloco ${i + 1}/${chunks.length}: ${part.details ?? part.error}` };
+    }
+    texts.push(part.text);
+    for (const s of part.segments) segments.push({ ...s, id: segId++ });
+  }
+
+  return {
+    task: "transcribe",
+    language: options.language ?? "pt",
+    duration: chunks.length * GROQ_CHUNK_SECONDS,
+    text: texts.join(" ").trim(),
+    segments,
+  };
+}
+
+// Transcreve UM arquivo de áudio via Groq. `offset` desloca os timestamps dos segmentos.
+async function groqTranscribeFile(
+  audioFile: string,
+  options: TranscribeOptions,
+  offset: number,
+): Promise<TranscriptionResponse | TranscriptionError> {
+  const buf = await fs.readFile(audioFile);
   const form = new FormData();
   form.append("file", new Blob([new Uint8Array(buf)], { type: "audio/wav" }), "audio.wav");
   form.append("model", ENV.groqModel);
@@ -177,7 +237,7 @@ async function transcribeGroq(
   }
 
   const data = (await resp.json()) as any;
-  if (!data?.text || typeof data.text !== "string") {
+  if (typeof data?.text !== "string") {
     return { error: "Resposta de transcrição inválida (Groq)", code: "SERVICE_ERROR" };
   }
   return {
@@ -187,8 +247,8 @@ async function transcribeGroq(
     text: data.text,
     segments: (data.segments ?? []).map((s: any, i: number) => ({
       id: s.id ?? i,
-      start: s.start ?? 0,
-      end: s.end ?? 0,
+      start: (s.start ?? 0) + offset,
+      end: (s.end ?? 0) + offset,
       text: s.text ?? "",
     })),
   };
