@@ -1,0 +1,290 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap");
+
+@custom-variant dark (&:is(.dark *));
+
+/* ─── Design Tokens ─────────────────────────────────────────── */
+@theme inline {
+  --color-background:    oklch(0.985 0.003 247);
+  --color-foreground:    oklch(0.13 0.015 247);
+  --color-card:          oklch(1 0 0);
+  --color-card-foreground: oklch(0.13 0.015 247);
+  --color-popover:       oklch(1 0 0);
+  --color-popover-foreground: oklch(0.13 0.015 247);
+
+  /* Deloitte Blue */
+  --color-primary:       oklch(0.34 0.12 255);
+  --color-primary-foreground: oklch(1 0 0);
+
+  /* Deloitte Green accent */
+  --color-accent:        oklch(0.55 0.15 155);
+  --color-accent-foreground: oklch(1 0 0);
+
+  --color-secondary:     oklch(0.96 0.005 247);
+  --color-secondary-foreground: oklch(0.34 0.12 255);
+  --color-muted:         oklch(0.96 0.005 247);
+  --color-muted-foreground: oklch(0.52 0.01 247);
+  --color-border:        oklch(0.91 0.005 247);
+  --color-input:         oklch(0.91 0.005 247);
+  --color-ring:          oklch(0.34 0.12 255);
+  --color-destructive:   oklch(0.55 0.22 27);
+  --color-destructive-foreground: oklch(1 0 0);
+  --color-info:          oklch(0.55 0.15 230);
+  --color-warning:       oklch(0.72 0.16 65);
+
+  --radius-sm:  0.375rem;
+  --radius-md:  0.5rem;
+  --radius-lg:  0.75rem;
+  --radius-xl:  1rem;
+  --radius-2xl: 1.5rem;
+  --radius:     0.5rem;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Playfair Display", Georgia, serif;
+}
+
+/* ─── Base ───────────────────────────────────────────────────── */
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    line-height: 1.65;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-serif);
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+  }
+
+  ::selection {
+    background-color: oklch(0.34 0.12 255 / 0.15);
+    color: var(--color-foreground);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 99px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--color-muted-foreground); }
+}
+
+/* ─── Container ─────────────────────────────────────────────── */
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin-inline: auto;
+  padding-inline: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .container { padding-inline: 2rem; }
+}
+
+/* ─── Flex defaults ─────────────────────────────────────────── */
+.flex { min-width: 0; min-height: 0; }
+
+/* ─── Document content (Streamdown / rendered markdown) ─────── */
+.document-content {
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  line-height: 1.75;
+  color: var(--color-foreground);
+}
+
+.document-content h1 {
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--color-primary);
+}
+
+.document-content h2 {
+  font-family: var(--font-serif);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-top: 1.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.document-content h3 {
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-foreground);
+  margin-top: 1.25rem;
+  margin-bottom: 0.4rem;
+}
+
+.document-content p {
+  margin-bottom: 0.875rem;
+}
+
+.document-content ul, .document-content ol {
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.document-content li {
+  margin-bottom: 0.375rem;
+}
+
+.document-content ul li { list-style-type: disc; }
+.document-content ol li { list-style-type: decimal; }
+
+.document-content strong { font-weight: 600; color: var(--color-foreground); }
+.document-content em { font-style: italic; color: oklch(0.42 0.01 247); }
+
+.document-content blockquote {
+  border-left: 3px solid var(--color-primary);
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+  background: oklch(0.34 0.12 255 / 0.04);
+  border-radius: 0 0.375rem 0.375rem 0;
+  color: oklch(0.42 0.01 247);
+  font-style: italic;
+}
+
+.document-content hr {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: 1.5rem 0;
+}
+
+.document-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.25rem 0;
+  font-size: 0.875rem;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px var(--color-border);
+}
+
+.document-content thead tr {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+.document-content thead th {
+  padding: 0.625rem 0.875rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.8125rem;
+  letter-spacing: 0.02em;
+}
+
+.document-content tbody td {
+  padding: 0.5625rem 0.875rem;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+}
+
+.document-content tbody tr:last-child td { border-bottom: none; }
+
+.document-content tbody tr:nth-child(even) {
+  background-color: oklch(0.34 0.12 255 / 0.025);
+}
+
+.document-content code {
+  font-family: ui-monospace, "Cascadia Code", monospace;
+  font-size: 0.8125rem;
+  background: var(--color-muted);
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  color: var(--color-primary);
+}
+
+/* ─── Upload drag zone ──────────────────────────────────────── */
+.drop-zone-active {
+  border-color: var(--color-primary) !important;
+  background-color: oklch(0.34 0.12 255 / 0.04) !important;
+}
+
+/* ─── Processing step animations ───────────────────────────── */
+@keyframes step-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.step-active { animation: step-pulse 1.8s ease-in-out infinite; }
+
+/* ─── Gradient hero background ─────────────────────────────── */
+.hero-gradient {
+  background: radial-gradient(ellipse 80% 60% at 50% -10%, oklch(0.34 0.12 255 / 0.08) 0%, transparent 70%),
+              radial-gradient(ellipse 50% 40% at 80% 30%, oklch(0.55 0.15 155 / 0.05) 0%, transparent 60%);
+}
+
+/* ─── Card hover effects ────────────────────────────────────── */
+.card-hover {
+  transition: transform 180ms cubic-bezier(0.23, 1, 0.32, 1),
+              box-shadow 180ms cubic-bezier(0.23, 1, 0.32, 1),
+              border-color 180ms ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px oklch(0.34 0.12 255 / 0.08);
+}
+
+/* ─── Button active scale ───────────────────────────────────── */
+button:active:not(:disabled) { transform: scale(0.97); }
+.btn-scale { transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1); }
+
+/* ─── Deloitte brand stripe ─────────────────────────────────── */
+.deloitte-stripe {
+  background: linear-gradient(90deg,
+    oklch(0.34 0.12 255) 0%,
+    oklch(0.34 0.12 255) 85%,
+    oklch(0.55 0.15 155) 85%,
+    oklch(0.55 0.15 155) 100%
+  );
+}
+
+/* ─── Status badge colors ───────────────────────────────────── */
+.status-done      { color: var(--color-accent); background: oklch(0.55 0.15 155 / 0.1); }
+.status-error     { color: var(--color-destructive); background: oklch(0.55 0.22 27 / 0.1); }
+.status-pending   { color: var(--color-muted-foreground); background: var(--color-muted); }
+.status-active    { color: var(--color-info); background: oklch(0.55 0.15 230 / 0.1); }
+
+/* ─── Animations ────────────────────────────────────────────── */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.animate-fade-in-up { animation: fade-in-up 400ms cubic-bezier(0.23, 1, 0.32, 1) both; }
+.animate-fade-in    { animation: fade-in 300ms ease both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in-up,
+  .animate-fade-in,
+  .step-active,
+  .card-hover:hover { animation: none; transform: none; }
+}

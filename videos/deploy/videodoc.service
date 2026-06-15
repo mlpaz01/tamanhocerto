@@ -1,0 +1,19 @@
+[Unit]
+Description=VideoDoc Engine
+After=network.target mysql.service
+
+[Service]
+Type=simple
+# Ajuste User e WorkingDirectory para o seu ambiente
+User=ubuntu
+WorkingDirectory=/home/ubuntu/video-doc-engine
+EnvironmentFile=/home/ubuntu/video-doc-engine/.env
+ExecStart=/usr/bin/node dist/index.js
+Restart=always
+RestartSec=5
+# Logs vão para o journal (journalctl -u videodoc -f)
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

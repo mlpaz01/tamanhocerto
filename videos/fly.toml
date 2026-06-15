@@ -1,0 +1,37 @@
+# Configuração Fly.io — VideoDoc Engine
+# Troque "app" por um nome único antes do primeiro deploy (ou use `fly launch`).
+app = "video-doc-engine"
+primary_region = "gru"   # São Paulo
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "3000"
+  NODE_ENV = "production"
+  STORAGE_DIR = "/data/storage"
+  TRANSCRIBE_PROVIDER = "groq"
+  LLM_API_URL = "https://openrouter.ai/api/v1"
+  LLM_MODEL = "google/gemini-2.5-flash"
+  GROQ_MODEL = "whisper-large-v3-turbo"
+
+# Disco persistente para uploads e documentos gerados
+[[mounts]]
+  source = "videodoc_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 50
+    hard_limit = 100
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

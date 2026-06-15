@@ -1,0 +1,2 @@
+# Transcrição local — roda em CPU (ideal pro free tier ARM da Oracle)
+faster-whisper==1.0.3
