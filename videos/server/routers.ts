@@ -16,8 +16,8 @@ import {
   createUser,
 } from "./db";
 import { transcribeAudio } from "./_core/voiceTranscription";
-import { generateDeloitteDocument, formatDocumentAsMarkdown } from "./documentGenerator";
-import { generateDocx } from "./docxGenerator";
+import { generateDeloitteDocument, formatDocumentAsMarkdown, generateSpecDocument } from "./documentGenerator";
+import { generateDocx, generateSpecDocx } from "./docxGenerator";
 import { storagePut, storageGet, storageGetSignedUrl, storagePath } from "./storage";
 
 export const appRouter = router({
@@ -83,13 +83,14 @@ export const appRouter = router({
   documents: router({
     // Create a new document job (YouTube URL)
     createFromYoutube: protectedProcedure
-      .input(z.object({ youtubeUrl: z.string().url() }))
+      .input(z.object({ youtubeUrl: z.string().url(), docType: z.enum(["deloitte", "spec"]).optional() }))
       .mutation(async ({ ctx, input }) => {
         const docId = await createDocument({
           userId: ctx.user.id,
           title: "Processando...",
           sourceType: "youtube",
           youtubeUrl: input.youtubeUrl,
+          docType: input.docType ?? "deloitte",
           status: "pending",
         });
         return { id: docId };
@@ -101,12 +102,14 @@ export const appRouter = router({
         videoStorageKey: z.string(),
         title: z.string().optional(),
         fileSizeBytes: z.number().optional(),
+        docType: z.enum(["deloitte", "spec"]).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const docId = await createDocument({
           userId: ctx.user.id,
           title: input.title ?? "Vídeo enviado",
           sourceType: "upload",
+          docType: input.docType ?? "deloitte",
           videoStorageKey: input.videoStorageKey,
           fileSizeBytes: input.fileSizeBytes,
           status: "transcribing",
@@ -176,25 +179,38 @@ export const appRouter = router({
 
           await updateDocument(input.id, { transcription, status: "analyzing" });
 
-          // Step 3: Generate document via LLM
+          // Step 3: Generate document via LLM (de acordo com o tipo escolhido)
           await updateDocument(input.id, { status: "generating" });
-          const deloitteDoc = await generateDeloitteDocument(transcription);
-          const markdownContent = formatDocumentAsMarkdown(deloitteDoc);
 
-          // Step 4: Generate DOCX
-          const docxBuffer = await generateDocx(deloitteDoc);
+          let title: string;
+          let markdownContent: string;
+          let docxBuffer: Buffer;
+
+          if (doc.docType === "spec") {
+            const spec = await generateSpecDocument(transcription);
+            title = spec.title;
+            markdownContent = spec.markdown;
+            docxBuffer = await generateSpecDocx(spec);
+          } else {
+            const deloitteDoc = await generateDeloitteDocument(transcription);
+            title = deloitteDoc.title;
+            markdownContent = formatDocumentAsMarkdown(deloitteDoc);
+            docxBuffer = await generateDocx(deloitteDoc);
+          }
+
+          // Step 4: Save DOCX
           const docxKey = `documents/${ctx.user.id}/${input.id}/document.docx`;
           const { key: savedDocxKey } = await storagePut(docxKey, docxBuffer, "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
 
           // Step 5: Save everything
           await updateDocument(input.id, {
-            title: deloitteDoc.title,
+            title,
             content: markdownContent,
             docxStorageKey: savedDocxKey,
             status: "done",
           });
 
-          return { success: true, title: deloitteDoc.title };
+          return { success: true, title };
         } catch (error: any) {
           await updateDocument(input.id, {
             status: "error",

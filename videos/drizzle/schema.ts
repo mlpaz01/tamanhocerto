@@ -26,6 +26,7 @@ export const documents = mysqlTable("documents", {
     "pending", "uploading", "transcribing", "analyzing", "generating", "done", "error"
   ]).notNull().default("pending"),
   sourceType: mysqlEnum("sourceType", ["upload", "mp4", "youtube"]).notNull(),
+  docType: mysqlEnum("docType", ["deloitte", "spec"]).notNull().default("deloitte"),
   youtubeUrl: text("youtubeUrl"),
   videoStorageKey: text("videoStorageKey"),
   fileSizeBytes: bigint("fileSizeBytes", { mode: "number" }),

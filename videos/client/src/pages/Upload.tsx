@@ -16,6 +16,7 @@ export default function UploadPage() {
   const [, navigate] = useLocation();
   const { user, isAuthenticated } = useAuth();
   const [mode, setMode] = useState<UploadMode>("file");
+  const [docType, setDocType] = useState<"deloitte" | "spec">("deloitte");
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [youtubeUrl, setYoutubeUrl] = useState("");
@@ -84,7 +85,7 @@ export default function UploadPage() {
         }
         setProcessingStatus("uploading");
         setLastActiveStatus("uploading");
-        const result = await createFromYoutube.mutateAsync({ youtubeUrl });
+        const result = await createFromYoutube.mutateAsync({ youtubeUrl, docType });
         newDocId = result.id;
         setDocId(newDocId);
       } else {
@@ -120,6 +121,7 @@ export default function UploadPage() {
           videoStorageKey: uploadData.storageKey,
           title: selectedFile.name.replace(/\.[^.]+$/, ""),
           fileSizeBytes: selectedFile.size,
+          docType,
         });
         newDocId = result.id;
         setDocId(newDocId);
@@ -181,6 +183,32 @@ export default function UploadPage() {
             Envie um vídeo MP4 ou cole um link do YouTube para gerar documentação consultiva no padrão Deloitte automaticamente.
           </p>
         </div>
+
+        {/* Document type selector */}
+        {!isProcessing && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+            <button
+              onClick={() => setDocType("deloitte")}
+              className={cn(
+                "text-left p-4 rounded-xl border-2 transition-all duration-200",
+                docType === "deloitte" ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
+              )}
+            >
+              <p className="font-semibold text-sm text-foreground">Relatório Consultivo</p>
+              <p className="text-xs text-muted-foreground mt-1">Padrão Deloitte: visão executiva, riscos, recomendações e próximos passos.</p>
+            </button>
+            <button
+              onClick={() => setDocType("spec")}
+              className={cn(
+                "text-left p-4 rounded-xl border-2 transition-all duration-200",
+                docType === "spec" ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
+              )}
+            >
+              <p className="font-semibold text-sm text-foreground">Especificação Técnica</p>
+              <p className="text-xs text-muted-foreground mt-1">Requisitos, UI, mapeamento de campos/APIs e regras de negócio para o desenvolvedor.</p>
+            </button>
+          </div>
+        )}
 
         {/* Mode selector */}
         <div className="flex gap-2 mb-6 p-1 bg-muted rounded-lg w-fit">

@@ -14,254 +14,202 @@ import {
   PageBreak,
   Header,
   Footer,
-  ImageRun,
 } from "docx";
-import type { DeloitteDocument } from "./documentGenerator";
+import type { DeloitteDocument, SpecDocument } from "./documentGenerator";
 
-function parseMarkdownToDocxParagraphs(markdown: string): Paragraph[] {
-  const paragraphs: Paragraph[] = [];
-  const lines = markdown.split("\n");
+type Block = Paragraph | Table;
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
+const isTableLine = (l: string) => /^\s*\|.*\|\s*$/.test(l);
+const isTableSeparator = (l: string) => /^\s*\|?[\s:|-]+\|?\s*$/.test(l) && l.includes("-");
 
-    if (line.startsWith("### ")) {
-      paragraphs.push(new Paragraph({
-        text: line.replace("### ", ""),
-        heading: HeadingLevel.HEADING_3,
-        spacing: { before: 200, after: 100 },
-      }));
-    } else if (line.startsWith("## ")) {
-      paragraphs.push(new Paragraph({
-        text: line.replace("## ", ""),
-        heading: HeadingLevel.HEADING_2,
-        spacing: { before: 300, after: 150 },
-      }));
-    } else if (line.startsWith("# ")) {
-      paragraphs.push(new Paragraph({
-        text: line.replace("# ", ""),
-        heading: HeadingLevel.HEADING_1,
-        spacing: { before: 400, after: 200 },
-      }));
-    } else if (line.startsWith("- ") || line.startsWith("* ")) {
-      paragraphs.push(new Paragraph({
-        text: line.replace(/^[-*] /, ""),
-        bullet: { level: 0 },
-        spacing: { before: 60, after: 60 },
-      }));
-    } else if (line.match(/^\d+\. /)) {
-      paragraphs.push(new Paragraph({
-        text: line.replace(/^\d+\. /, ""),
-        numbering: { reference: "default-numbering", level: 0 },
-        spacing: { before: 60, after: 60 },
-      }));
-    } else if (line.startsWith("---")) {
-      paragraphs.push(new Paragraph({
-        text: "",
-        border: { bottom: { color: "86888A", size: 6, style: BorderStyle.SINGLE } },
-        spacing: { before: 200, after: 200 },
-      }));
-    } else if (line.trim() === "") {
-      paragraphs.push(new Paragraph({ text: "", spacing: { before: 80, after: 80 } }));
-    } else {
-      // Parse inline bold/italic
-      const runs: TextRun[] = [];
-      const parts = line.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g);
-      for (const part of parts) {
-        if (part.startsWith("**") && part.endsWith("**")) {
-          runs.push(new TextRun({ text: part.slice(2, -2), bold: true, font: "Calibri", size: 22 }));
-        } else if (part.startsWith("*") && part.endsWith("*")) {
-          runs.push(new TextRun({ text: part.slice(1, -1), italics: true, font: "Calibri", size: 22 }));
-        } else if (part) {
-          runs.push(new TextRun({ text: part, font: "Calibri", size: 22 }));
-        }
-      }
-      paragraphs.push(new Paragraph({
-        children: runs,
-        spacing: { before: 80, after: 80 },
-      }));
-    }
-  }
-  return paragraphs;
+function splitCells(line: string): string[] {
+  let s = line.trim();
+  if (s.startsWith("|")) s = s.slice(1);
+  if (s.endsWith("|")) s = s.slice(0, -1);
+  return s.split("|").map(c => c.trim());
 }
 
-function sectionHeader(title: string, number: string): Paragraph[] {
-  return [
+function inlineRuns(text: string, opts: { bold?: boolean; size?: number } = {}): TextRun[] {
+  const size = opts.size ?? 22;
+  const runs: TextRun[] = [];
+  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g);
+  for (const part of parts) {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      runs.push(new TextRun({ text: part.slice(2, -2), bold: true, font: "Calibri", size }));
+    } else if (part.startsWith("*") && part.endsWith("*")) {
+      runs.push(new TextRun({ text: part.slice(1, -1), italics: true, font: "Calibri", size }));
+    } else if (part.startsWith("`") && part.endsWith("`")) {
+      runs.push(new TextRun({ text: part.slice(1, -1), font: "Consolas", size: size - 2 }));
+    } else if (part) {
+      runs.push(new TextRun({ text: part, bold: opts.bold, font: "Calibri", size }));
+    }
+  }
+  if (runs.length === 0) runs.push(new TextRun({ text: "", font: "Calibri", size }));
+  return runs;
+}
+
+function buildTable(lines: string[]): Table {
+  const rows = lines.filter(l => !isTableSeparator(l)).map(splitCells);
+  const colCount = Math.max(...rows.map(r => r.length));
+  const tableRows = rows.map((cells, rowIdx) => {
+    const isHeader = rowIdx === 0;
+    const padded = [...cells];
+    while (padded.length < colCount) padded.push("");
+    return new TableRow({
+      tableHeader: isHeader,
+      children: padded.map(cell =>
+        new TableCell({
+          width: { size: Math.floor(100 / colCount), type: WidthType.PERCENTAGE },
+          shading: isHeader ? { type: ShadingType.CLEAR, fill: "003087", color: "auto" } : undefined,
+          margins: { top: 60, bottom: 60, left: 100, right: 100 },
+          children: [new Paragraph({
+            children: inlineRuns(cell, { bold: isHeader, size: 20 }).map(r =>
+              isHeader ? new TextRun({ text: (r as any).text ?? "", bold: true, color: "FFFFFF", font: "Calibri", size: 20 }) : r
+            ),
+          })],
+        })
+      ),
+    });
+  });
+  return new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    rows: tableRows,
+  });
+}
+
+export function parseMarkdownToBlocks(markdown: string): Block[] {
+  const blocks: Block[] = [];
+  const lines = markdown.split("\n");
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    // Fenced code blocks (```), incl. mermaid/diagramas — não renderizamos como código cru.
+    if (line.trim().startsWith("```")) {
+      const lang = line.trim().replace(/`/g, "").toLowerCase();
+      const code: string[] = [];
+      i++;
+      while (i < lines.length && !lines[i].trim().startsWith("```")) {
+        code.push(lines[i]);
+        i++;
+      }
+      i++; // pula a fence de fechamento
+      const isDiagram = /mermaid|graphviz|dot|plantuml|sequence|flowchart/.test(lang);
+      if (isDiagram) {
+        blocks.push(new Paragraph({
+          children: [new TextRun({ text: "[Diagrama descrito no texto acima]", italics: true, color: "86888A", font: "Calibri", size: 20 })],
+          spacing: { before: 80, after: 80 },
+        }));
+      } else {
+        for (const c of code) {
+          blocks.push(new Paragraph({
+            children: [new TextRun({ text: c, font: "Consolas", size: 20 })],
+            spacing: { before: 20, after: 20 },
+          }));
+        }
+      }
+      continue;
+    }
+
+    // Tabela Markdown
+    if (isTableLine(line)) {
+      const tbl: string[] = [];
+      while (i < lines.length && isTableLine(lines[i])) {
+        tbl.push(lines[i]);
+        i++;
+      }
+      if (tbl.length >= 2) {
+        blocks.push(buildTable(tbl));
+        blocks.push(new Paragraph({ text: "", spacing: { after: 120 } }));
+        continue;
+      }
+      // não é tabela de verdade — cai pro parágrafo normal
+    }
+
+    if (line.startsWith("### ")) {
+      blocks.push(new Paragraph({ text: line.replace("### ", ""), heading: HeadingLevel.HEADING_3, spacing: { before: 200, after: 100 } }));
+    } else if (line.startsWith("## ")) {
+      blocks.push(new Paragraph({ text: line.replace("## ", ""), heading: HeadingLevel.HEADING_2, spacing: { before: 300, after: 150 } }));
+    } else if (line.startsWith("# ")) {
+      blocks.push(new Paragraph({ text: line.replace("# ", ""), heading: HeadingLevel.HEADING_1, spacing: { before: 400, after: 200 } }));
+    } else if (line.startsWith("- ") || line.startsWith("* ")) {
+      blocks.push(new Paragraph({ children: inlineRuns(line.replace(/^[-*] /, "")), bullet: { level: 0 }, spacing: { before: 60, after: 60 } }));
+    } else if (line.match(/^\d+\. /)) {
+      blocks.push(new Paragraph({ children: inlineRuns(line.replace(/^\d+\. /, "")), numbering: { reference: "default-numbering", level: 0 }, spacing: { before: 60, after: 60 } }));
+    } else if (line.startsWith("---")) {
+      blocks.push(new Paragraph({ text: "", border: { bottom: { color: "86888A", size: 6, style: BorderStyle.SINGLE } }, spacing: { before: 200, after: 200 } }));
+    } else if (line.trim() === "") {
+      blocks.push(new Paragraph({ text: "", spacing: { before: 80, after: 80 } }));
+    } else {
+      blocks.push(new Paragraph({ children: inlineRuns(line), spacing: { before: 80, after: 80 } }));
+    }
+    i++;
+  }
+  return blocks;
+}
+
+function sectionHeader(title: string, number: string): Paragraph {
+  return new Paragraph({
+    children: [new TextRun({ text: `${number}. ${title}`, bold: true, color: "003087", size: 28, font: "Calibri" })],
+    heading: HeadingLevel.HEADING_1,
+    spacing: { before: 480, after: 240 },
+    border: { bottom: { color: "003087", size: 12, style: BorderStyle.SINGLE } },
+  });
+}
+
+function coverAndShell(title: string, subtitle: string, headerLabel: string, footerLabel: string, body: Block[]): Document {
+  const cover: Block[] = [
+    new Paragraph({ children: [new TextRun({ text: "", break: 1 })], spacing: { before: 2000 } }),
     new Paragraph({
-      children: [
-        new TextRun({
-          text: `${number}. ${title}`,
-          bold: true,
-          color: "003087",
-          size: 28,
-          font: "Calibri",
-        }),
-      ],
-      heading: HeadingLevel.HEADING_1,
-      spacing: { before: 480, after: 240 },
-      border: {
-        bottom: { color: "003087", size: 12, style: BorderStyle.SINGLE },
-      },
+      children: [new TextRun({ text: title, bold: true, color: "003087", size: 48, font: "Calibri Light" })],
+      alignment: AlignmentType.CENTER, spacing: { before: 400, after: 200 },
     }),
+    new Paragraph({
+      children: [new TextRun({ text: subtitle, color: "86888A", size: 28, font: "Calibri" })],
+      alignment: AlignmentType.CENTER, spacing: { after: 100 },
+    }),
+    new Paragraph({ children: [new PageBreak()] }),
   ];
+
+  return new Document({
+    creator: "VideoDoc",
+    title,
+    styles: {
+      default: { document: { run: { font: "Calibri", size: 22, color: "1A1A1A" }, paragraph: { spacing: { line: 276 } } } },
+      paragraphStyles: [
+        { id: "Heading1", name: "Heading 1", basedOn: "Normal", next: "Normal", run: { bold: true, color: "003087", size: 28, font: "Calibri" } },
+        { id: "Heading2", name: "Heading 2", basedOn: "Normal", next: "Normal", run: { bold: true, color: "003087", size: 24, font: "Calibri" } },
+        { id: "Heading3", name: "Heading 3", basedOn: "Normal", next: "Normal", run: { bold: true, color: "003087", size: 22, font: "Calibri" } },
+      ],
+    },
+    sections: [{
+      properties: { page: { margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 } } },
+      headers: { default: new Header({ children: [new Paragraph({ children: [new TextRun({ text: headerLabel, color: "86888A", size: 18, font: "Calibri" })], alignment: AlignmentType.RIGHT, border: { bottom: { color: "003087", size: 4, style: BorderStyle.SINGLE } } })] }) },
+      footers: { default: new Footer({ children: [new Paragraph({ children: [new TextRun({ text: footerLabel, color: "86888A", size: 18, font: "Calibri" })], alignment: AlignmentType.CENTER, border: { top: { color: "86888A", size: 2, style: BorderStyle.SINGLE } } })] }) },
+      children: [...cover, ...body],
+    }],
+  });
 }
 
 export async function generateDocx(doc: DeloitteDocument): Promise<Buffer> {
-  const sections = [
-    // Cover page
-    new Paragraph({
-      children: [new TextRun({ text: "", break: 1 })],
-      spacing: { before: 2000 },
-    }),
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: doc.title,
-          bold: true,
-          color: "003087",
-          size: 48,
-          font: "Calibri Light",
-        }),
-      ],
-      alignment: AlignmentType.CENTER,
-      spacing: { before: 400, after: 200 },
-    }),
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: "Documentação Consultiva",
-          color: "86888A",
-          size: 28,
-          font: "Calibri",
-        }),
-      ],
-      alignment: AlignmentType.CENTER,
-      spacing: { before: 0, after: 100 },
-    }),
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: `Gerado em ${new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}`,
-          color: "86888A",
-          size: 22,
-          font: "Calibri",
-        }),
-      ],
-      alignment: AlignmentType.CENTER,
-      spacing: { before: 0, after: 400 },
-    }),
-    new Paragraph({
-      children: [new PageBreak()],
-    }),
-
-    // Sections
-    ...sectionHeader("Visão Executiva", "1"),
-    ...parseMarkdownToDocxParagraphs(doc.executiveSummary),
-
-    ...sectionHeader("Processo Ponta a Ponta", "2"),
-    ...parseMarkdownToDocxParagraphs(doc.endToEndProcess),
-
-    ...sectionHeader("Responsabilidades", "3"),
-    ...parseMarkdownToDocxParagraphs(doc.responsibilities),
-
-    ...sectionHeader("Riscos", "4"),
-    ...parseMarkdownToDocxParagraphs(doc.risks),
-
-    ...sectionHeader("Recomendações", "5"),
-    ...parseMarkdownToDocxParagraphs(doc.recommendations),
-
-    ...sectionHeader("Próximos Passos", "6"),
-    ...parseMarkdownToDocxParagraphs(doc.nextSteps),
-
-    // Footer note
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: "Documento gerado automaticamente pela plataforma VideoDoc Consultivo",
-          color: "86888A",
-          size: 18,
-          italics: true,
-          font: "Calibri",
-        }),
-      ],
-      alignment: AlignmentType.CENTER,
-      spacing: { before: 600, after: 0 },
-      border: { top: { color: "86888A", size: 4, style: BorderStyle.SINGLE } },
-    }),
+  const body: Block[] = [
+    sectionHeader("Visão Executiva", "1"), ...parseMarkdownToBlocks(doc.executiveSummary),
+    sectionHeader("Processo Ponta a Ponta", "2"), ...parseMarkdownToBlocks(doc.endToEndProcess),
+    sectionHeader("Responsabilidades", "3"), ...parseMarkdownToBlocks(doc.responsibilities),
+    sectionHeader("Riscos", "4"), ...parseMarkdownToBlocks(doc.risks),
+    sectionHeader("Recomendações", "5"), ...parseMarkdownToBlocks(doc.recommendations),
+    sectionHeader("Próximos Passos", "6"), ...parseMarkdownToBlocks(doc.nextSteps),
   ];
+  const docx = coverAndShell(doc.title, "Documentação Consultiva", "VideoDoc | Padrão Deloitte", "Confidencial — Para uso interno", body);
+  return await Packer.toBuffer(docx);
+}
 
-  const docxDoc = new Document({
-    creator: "VideoDoc Consultivo",
-    title: doc.title,
-    description: "Documentação consultiva gerada automaticamente",
-    styles: {
-      default: {
-        document: {
-          run: { font: "Calibri", size: 22, color: "1A1A1A" },
-          paragraph: { spacing: { line: 276 } },
-        },
-      },
-      paragraphStyles: [
-        {
-          id: "Heading1",
-          name: "Heading 1",
-          basedOn: "Normal",
-          next: "Normal",
-          run: { bold: true, color: "003087", size: 28, font: "Calibri" },
-        },
-        {
-          id: "Heading2",
-          name: "Heading 2",
-          basedOn: "Normal",
-          next: "Normal",
-          run: { bold: true, color: "003087", size: 24, font: "Calibri" },
-        },
-        {
-          id: "Heading3",
-          name: "Heading 3",
-          basedOn: "Normal",
-          next: "Normal",
-          run: { bold: true, color: "003087", size: 22, font: "Calibri" },
-        },
-      ],
-    },
-    sections: [
-      {
-        properties: {
-          page: {
-            margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 },
-          },
-        },
-        headers: {
-          default: new Header({
-            children: [
-              new Paragraph({
-                children: [
-                  new TextRun({ text: "VideoDoc Consultivo | Padrão Deloitte", color: "86888A", size: 18, font: "Calibri" }),
-                ],
-                alignment: AlignmentType.RIGHT,
-                border: { bottom: { color: "003087", size: 4, style: BorderStyle.SINGLE } },
-              }),
-            ],
-          }),
-        },
-        footers: {
-          default: new Footer({
-            children: [
-              new Paragraph({
-                children: [
-                  new TextRun({ text: "Confidencial — Para uso interno", color: "86888A", size: 18, font: "Calibri" }),
-                ],
-                alignment: AlignmentType.CENTER,
-                border: { top: { color: "86888A", size: 2, style: BorderStyle.SINGLE } },
-              }),
-            ],
-          }),
-        },
-        children: sections,
-      },
-    ],
-  });
-
-  return await Packer.toBuffer(docxDoc);
+export async function generateSpecDocx(spec: SpecDocument): Promise<Buffer> {
+  // A especificação já vem como markdown completo (com # título). Removemos o
+  // primeiro H1 da capa para não duplicar com o título.
+  const md = spec.markdown.replace(/^\s*#\s+.*\n/, "");
+  const body = parseMarkdownToBlocks(md);
+  const docx = coverAndShell(spec.title, "Especificação Técnica", "VideoDoc | Especificação Técnica", "Documento técnico — Para a equipe de desenvolvimento", body);
+  return await Packer.toBuffer(docx);
 }
