@@ -14,8 +14,37 @@ import {
   PageBreak,
   Header,
   Footer,
+  ImageRun,
 } from "docx";
 import type { DeloitteDocument, SpecDocument } from "./documentGenerator";
+import { jpegSize, type ExtractedFrame } from "./_core/frameExtractor";
+
+function screenshotBlocks(frames: ExtractedFrame[]): Block[] {
+  if (!frames.length) return [];
+  const blocks: Block[] = [
+    new Paragraph({
+      children: [new TextRun({ text: "Capturas de Tela de Referência", bold: true, color: "003087", size: 28, font: "Calibri" })],
+      heading: HeadingLevel.HEADING_1,
+      spacing: { before: 480, after: 240 },
+      border: { bottom: { color: "003087", size: 12, style: BorderStyle.SINGLE } },
+    }),
+  ];
+  const MAX_W = 560; // largura útil da página (px @96dpi)
+  for (const f of frames) {
+    const { width, height } = jpegSize(f.buffer);
+    const w = Math.min(MAX_W, width);
+    const h = Math.round((height / width) * w);
+    blocks.push(new Paragraph({
+      children: [new ImageRun({ type: "jpg", data: f.buffer, transformation: { width: w, height: h } })],
+      spacing: { before: 160, after: 40 },
+    }));
+    blocks.push(new Paragraph({
+      children: [new TextRun({ text: f.caption, italics: true, color: "86888A", size: 18, font: "Calibri" })],
+      spacing: { after: 160 },
+    }));
+  }
+  return blocks;
+}
 
 type Block = Paragraph | Table;
 
@@ -192,7 +221,7 @@ function coverAndShell(title: string, subtitle: string, headerLabel: string, foo
   });
 }
 
-export async function generateDocx(doc: DeloitteDocument): Promise<Buffer> {
+export async function generateDocx(doc: DeloitteDocument, screenshots: ExtractedFrame[] = []): Promise<Buffer> {
   const body: Block[] = [
     sectionHeader("Visão Executiva", "1"), ...parseMarkdownToBlocks(doc.executiveSummary),
     sectionHeader("Processo Ponta a Ponta", "2"), ...parseMarkdownToBlocks(doc.endToEndProcess),
@@ -200,16 +229,17 @@ export async function generateDocx(doc: DeloitteDocument): Promise<Buffer> {
     sectionHeader("Riscos", "4"), ...parseMarkdownToBlocks(doc.risks),
     sectionHeader("Recomendações", "5"), ...parseMarkdownToBlocks(doc.recommendations),
     sectionHeader("Próximos Passos", "6"), ...parseMarkdownToBlocks(doc.nextSteps),
+    ...screenshotBlocks(screenshots),
   ];
   const docx = coverAndShell(doc.title, "Documentação Consultiva", "VideoDoc | Padrão Deloitte", "Confidencial — Para uso interno", body);
   return await Packer.toBuffer(docx);
 }
 
-export async function generateSpecDocx(spec: SpecDocument): Promise<Buffer> {
+export async function generateSpecDocx(spec: SpecDocument, screenshots: ExtractedFrame[] = []): Promise<Buffer> {
   // A especificação já vem como markdown completo (com # título). Removemos o
   // primeiro H1 da capa para não duplicar com o título.
   const md = spec.markdown.replace(/^\s*#\s+.*\n/, "");
-  const body = parseMarkdownToBlocks(md);
+  const body = [...parseMarkdownToBlocks(md), ...screenshotBlocks(screenshots)];
   const docx = coverAndShell(spec.title, "Especificação Técnica", "VideoDoc | Especificação Técnica", "Documento técnico — Para a equipe de desenvolvimento", body);
   return await Packer.toBuffer(docx);
 }

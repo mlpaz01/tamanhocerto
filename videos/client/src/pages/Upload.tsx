@@ -17,6 +17,7 @@ export default function UploadPage() {
   const { user, isAuthenticated } = useAuth();
   const [mode, setMode] = useState<UploadMode>("file");
   const [docType, setDocType] = useState<"deloitte" | "spec">("deloitte");
+  const [includeScreenshots, setIncludeScreenshots] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [youtubeUrl, setYoutubeUrl] = useState("");
@@ -130,7 +131,7 @@ export default function UploadPage() {
       // Process the document
       setProcessingStatus("transcribing");
       setLastActiveStatus("transcribing");
-      await processDoc.mutateAsync({ id: newDocId });
+      await processDoc.mutateAsync({ id: newDocId, includeScreenshots: mode === "file" ? includeScreenshots : false });
       setProcessingStatus("done");
 
       setTimeout(() => {
@@ -312,6 +313,18 @@ export default function UploadPage() {
                   <p className="text-xs text-accent font-medium">URL válida detectada.</p>
                 )}
               </div>
+            )}
+
+            {mode === "file" && (
+              <label className="flex items-center gap-2 mt-4 text-sm text-muted-foreground cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={includeScreenshots}
+                  onChange={e => setIncludeScreenshots(e.target.checked)}
+                  className="w-4 h-4 accent-primary"
+                />
+                Incluir capturas de tela do vídeo no documento
+              </label>
             )}
           </div>
         )}

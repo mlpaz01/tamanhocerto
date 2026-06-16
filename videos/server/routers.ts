@@ -16,6 +16,7 @@ import {
   createUser,
 } from "./db";
 import { transcribeAudio } from "./_core/voiceTranscription";
+import { extractKeyFrames, type ExtractedFrame } from "./_core/frameExtractor";
 import { generateDeloitteDocument, formatDocumentAsMarkdown, generateSpecDocument } from "./documentGenerator";
 import { generateDocx, generateSpecDocx } from "./docxGenerator";
 import { storagePut, storageGet, storageGetSignedUrl, storagePath } from "./storage";
@@ -134,7 +135,7 @@ export const appRouter = router({
 
     // Process: transcribe + generate document
     process: protectedProcedure
-      .input(z.object({ id: z.number() }))
+      .input(z.object({ id: z.number(), includeScreenshots: z.boolean().optional() }))
       .mutation(async ({ ctx, input }) => {
         const doc = await getDocumentById(input.id);
         if (!doc) throw new TRPCError({ code: "NOT_FOUND" });
@@ -179,6 +180,27 @@ export const appRouter = router({
 
           await updateDocument(input.id, { transcription, status: "analyzing" });
 
+          // Step 2b: Capturas de tela (apenas para vídeo enviado; YouTube não baixa o vídeo)
+          let screenshots: ExtractedFrame[] = [];
+          let screenshotMd = "";
+          if (input.includeScreenshots && !isYoutube && doc.videoStorageKey) {
+            try {
+              const frames = await extractKeyFrames(storagePath(doc.videoStorageKey), 12);
+              for (let i = 0; i < frames.length; i++) {
+                const { key } = await storagePut(
+                  `documents/${ctx.user.id}/${input.id}/shot_${i + 1}.jpg`,
+                  frames[i].buffer,
+                  "image/jpeg",
+                );
+                const url = await storageGetSignedUrl(key);
+                screenshotMd += `\n![${frames[i].caption}](${url})\n\n*${frames[i].caption}*\n`;
+              }
+              screenshots = frames;
+            } catch (e) {
+              console.warn("[Screenshots] falha ao extrair frames:", e);
+            }
+          }
+
           // Step 3: Generate document via LLM (de acordo com o tipo escolhido)
           await updateDocument(input.id, { status: "generating" });
 
@@ -190,12 +212,17 @@ export const appRouter = router({
             const spec = await generateSpecDocument(transcription);
             title = spec.title;
             markdownContent = spec.markdown;
-            docxBuffer = await generateSpecDocx(spec);
+            docxBuffer = await generateSpecDocx(spec, screenshots);
           } else {
             const deloitteDoc = await generateDeloitteDocument(transcription);
             title = deloitteDoc.title;
             markdownContent = formatDocumentAsMarkdown(deloitteDoc);
-            docxBuffer = await generateDocx(deloitteDoc);
+            docxBuffer = await generateDocx(deloitteDoc, screenshots);
+          }
+
+          // Adiciona a seção de capturas ao conteúdo markdown (visualização web)
+          if (screenshotMd) {
+            markdownContent += `\n\n---\n\n## Capturas de Tela de Referência\n${screenshotMd}`;
           }
 
           // Step 4: Save DOCX
