@@ -265,7 +265,7 @@ export default function UploadPage() {
                         <p className="text-sm text-muted-foreground">
                           ou <span className="text-primary font-medium">clique para selecionar</span>
                         </p>
-                        <p className="text-xs text-muted-foreground mt-2">MP4, MOV, AVI — até 500MB</p>
+                        <p className="text-xs text-muted-foreground mt-2">MP4, MOV, AVI — até 5GB (vídeos grandes demoram; comprimir é recomendado)</p>
                       </div>
                     </div>
                     <input
