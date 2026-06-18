@@ -72,6 +72,7 @@ function run(cmd: string, args: string[], opts: { timeoutMs?: number } = {}): Pr
 }
 
 const isHttp = (s: string) => /^https?:\/\//i.test(s);
+const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 
 export async function transcribeAudio(
   options: TranscribeOptions,
@@ -195,6 +196,7 @@ async function transcribeGroq(
     }
     texts.push(part.text);
     for (const s of part.segments) segments.push({ ...s, id: segId++ });
+    if (i < chunks.length - 1) await sleep(2000); // respeita o rate limit da Groq
   }
 
   return {
@@ -211,6 +213,7 @@ async function groqTranscribeFile(
   audioFile: string,
   options: TranscribeOptions,
   offset: number,
+  attempt = 0,
 ): Promise<TranscriptionResponse | TranscriptionError> {
   const buf = await fs.readFile(audioFile);
   const form = new FormData();
@@ -227,10 +230,21 @@ async function groqTranscribeFile(
     body: form,
   });
 
+  // Rate limit (429): a Groq informa quanto esperar em Retry-After. Aguarda e tenta de novo.
+  if (resp.status === 429 && attempt < 6) {
+    const ra = parseFloat(resp.headers.get("retry-after") ?? "");
+    const waitSec = Number.isFinite(ra) && ra > 0 ? Math.min(ra, 300) : Math.min(10 * Math.pow(2, attempt), 120);
+    await sleep((waitSec + 1) * 1000);
+    return groqTranscribeFile(audioFile, options, offset, attempt + 1);
+  }
+
   if (!resp.ok) {
     const detail = await resp.text().catch(() => "");
+    const friendly = resp.status === 429
+      ? "Limite de uso da Groq atingido. Aguarde alguns minutos e tente novamente, ou use um vídeo menor."
+      : "Transcrição (Groq) falhou";
     return {
-      error: "Transcrição (Groq) falhou",
+      error: friendly,
       code: "TRANSCRIPTION_FAILED",
       details: `${resp.status} ${resp.statusText}: ${detail.slice(0, 800)}`,
     };
