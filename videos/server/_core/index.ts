@@ -62,8 +62,15 @@ async function startServer() {
     console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
   }
 
-  server.listen(port, () => {
+  server.listen(port, async () => {
     console.log(`Server running on http://localhost:${port}/`);
+    // Recupera documentos que ficaram presos por um reinício durante o processamento.
+    try {
+      const { failStuckDocuments } = await import("../db");
+      await failStuckDocuments();
+    } catch (e) {
+      console.warn("[Startup] recuperação de docs presos falhou:", e);
+    }
   });
 }
 

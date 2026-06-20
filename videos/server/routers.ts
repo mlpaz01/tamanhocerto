@@ -20,6 +20,90 @@ import { extractKeyFrames, type ExtractedFrame } from "./_core/frameExtractor";
 import { generateDeloitteDocument, formatDocumentAsMarkdown, generateSpecDocument } from "./documentGenerator";
 import { generateDocx, generateSpecDocx } from "./docxGenerator";
 import { storagePut, storageGet, storageGetSignedUrl, storagePath } from "./storage";
+import type { Document } from "../drizzle/schema";
+
+// Processa um documento em BACKGROUND (transcrição → capturas → geração → DOCX),
+// atualizando o status no banco a cada etapa. A tela acompanha por polling de getById.
+// Roda fora do ciclo da requisição HTTP, então vídeos longos não dependem de uma
+// conexão aberta por 20+ minutos.
+async function runDocumentPipeline(doc: Document, userId: number, includeScreenshots: boolean): Promise<void> {
+  try {
+    await updateDocument(doc.id, { status: "transcribing" });
+
+    let audioUrl: string;
+    let isYoutube = false;
+    if (doc.sourceType === "youtube" && doc.youtubeUrl) {
+      audioUrl = doc.youtubeUrl;
+      isYoutube = true;
+    } else if (doc.videoStorageKey) {
+      audioUrl = storagePath(doc.videoStorageKey);
+    } else {
+      throw new Error("Nenhuma fonte de vídeo disponível para transcrição.");
+    }
+
+    const transcriptionResult = await transcribeAudio({
+      audioUrl,
+      isYoutube,
+      language: "pt",
+      prompt: "Transcrição de reunião de negócios em português brasileiro. Nomes de sistemas: PLM, RLM, WMS, SAP, ERP, Shopify.",
+    });
+    if ("error" in transcriptionResult) {
+      const errDetail = (transcriptionResult as any).details ?? "";
+      throw new Error(`Falha na transcrição: ${(transcriptionResult as any).error}. ${errDetail}`);
+    }
+    const transcription = (transcriptionResult as any).text ?? "";
+    if (!transcription.trim()) {
+      throw new Error("A transcrição retornou vazia. Verifique se o vídeo contém áudio.");
+    }
+    await updateDocument(doc.id, { transcription, status: "analyzing" });
+
+    // Capturas de tela (apenas para vídeo enviado)
+    let screenshots: ExtractedFrame[] = [];
+    let screenshotMd = "";
+    if (includeScreenshots && !isYoutube && doc.videoStorageKey) {
+      try {
+        const frames = await extractKeyFrames(storagePath(doc.videoStorageKey), 12);
+        for (let i = 0; i < frames.length; i++) {
+          const { key } = await storagePut(`documents/${userId}/${doc.id}/shot_${i + 1}.jpg`, frames[i].buffer, "image/jpeg");
+          const url = await storageGetSignedUrl(key);
+          screenshotMd += `\n![${frames[i].caption}](${url})\n\n*${frames[i].caption}*\n`;
+        }
+        screenshots = frames;
+      } catch (e) {
+        console.warn("[Screenshots] falha ao extrair frames:", e);
+      }
+    }
+
+    await updateDocument(doc.id, { status: "generating" });
+
+    let title: string;
+    let markdownContent: string;
+    let docxBuffer: Buffer;
+    if (doc.docType === "spec") {
+      const spec = await generateSpecDocument(transcription);
+      title = spec.title;
+      markdownContent = spec.markdown;
+      docxBuffer = await generateSpecDocx(spec, screenshots);
+    } else {
+      const deloitteDoc = await generateDeloitteDocument(transcription);
+      title = deloitteDoc.title;
+      markdownContent = formatDocumentAsMarkdown(deloitteDoc);
+      docxBuffer = await generateDocx(deloitteDoc, screenshots);
+    }
+    if (screenshotMd) {
+      markdownContent += `\n\n---\n\n## Capturas de Tela de Referência\n${screenshotMd}`;
+    }
+
+    const docxKey = `documents/${userId}/${doc.id}/document.docx`;
+    const { key: savedDocxKey } = await storagePut(docxKey, docxBuffer, "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+
+    await updateDocument(doc.id, { title, content: markdownContent, docxStorageKey: savedDocxKey, status: "done" });
+    console.log(`[Pipeline] doc ${doc.id} concluído: ${title}`);
+  } catch (error: any) {
+    console.error(`[Pipeline] doc ${doc.id} falhou:`, error?.message ?? error);
+    await updateDocument(doc.id, { status: "error", errorMessage: error?.message ?? "Erro desconhecido" }).catch(() => {});
+  }
+}
 
 export const appRouter = router({
   system: systemRouter,
@@ -141,113 +225,10 @@ export const appRouter = router({
         if (!doc) throw new TRPCError({ code: "NOT_FOUND" });
         if (doc.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
 
-        try {
-          // Step 1: Determine audio source
-          await updateDocument(input.id, { status: "transcribing" });
-
-          let audioUrl: string;
-          let isYoutube = false;
-
-          if (doc.sourceType === "youtube" && doc.youtubeUrl) {
-            // YouTube: yt-dlp baixa e extrai o áudio a partir da URL
-            audioUrl = doc.youtubeUrl;
-            isYoutube = true;
-          } else if (doc.videoStorageKey) {
-            // Upload: o arquivo já está no disco — passa o caminho local pro ffmpeg
-            audioUrl = storagePath(doc.videoStorageKey);
-          } else {
-            throw new Error("Nenhuma fonte de vídeo disponível para transcrição.");
-          }
-
-          // Step 2: Transcribe audio
-          const transcriptionResult = await transcribeAudio({
-            audioUrl,
-            isYoutube,
-            language: "pt",
-            prompt: "Transcrição de reunião de negócios em português brasileiro. Nomes de sistemas: PLM, RLM, WMS, SAP, ERP, Shopify.",
-          });
-
-          // Check for transcription error
-          if ("error" in transcriptionResult) {
-            const errDetail = (transcriptionResult as any).details ?? "";
-            throw new Error(`Falha na transcrição: ${(transcriptionResult as any).error}. ${errDetail}`);
-          }
-
-          const transcription = (transcriptionResult as any).text ?? "";
-          if (!transcription.trim()) {
-            throw new Error("A transcrição retornou vazia. Verifique se o vídeo contém áudio.");
-          }
-
-          await updateDocument(input.id, { transcription, status: "analyzing" });
-
-          // Step 2b: Capturas de tela (apenas para vídeo enviado; YouTube não baixa o vídeo)
-          let screenshots: ExtractedFrame[] = [];
-          let screenshotMd = "";
-          if (input.includeScreenshots && !isYoutube && doc.videoStorageKey) {
-            try {
-              const frames = await extractKeyFrames(storagePath(doc.videoStorageKey), 12);
-              for (let i = 0; i < frames.length; i++) {
-                const { key } = await storagePut(
-                  `documents/${ctx.user.id}/${input.id}/shot_${i + 1}.jpg`,
-                  frames[i].buffer,
-                  "image/jpeg",
-                );
-                const url = await storageGetSignedUrl(key);
-                screenshotMd += `\n![${frames[i].caption}](${url})\n\n*${frames[i].caption}*\n`;
-              }
-              screenshots = frames;
-            } catch (e) {
-              console.warn("[Screenshots] falha ao extrair frames:", e);
-            }
-          }
-
-          // Step 3: Generate document via LLM (de acordo com o tipo escolhido)
-          await updateDocument(input.id, { status: "generating" });
-
-          let title: string;
-          let markdownContent: string;
-          let docxBuffer: Buffer;
-
-          if (doc.docType === "spec") {
-            const spec = await generateSpecDocument(transcription);
-            title = spec.title;
-            markdownContent = spec.markdown;
-            docxBuffer = await generateSpecDocx(spec, screenshots);
-          } else {
-            const deloitteDoc = await generateDeloitteDocument(transcription);
-            title = deloitteDoc.title;
-            markdownContent = formatDocumentAsMarkdown(deloitteDoc);
-            docxBuffer = await generateDocx(deloitteDoc, screenshots);
-          }
-
-          // Adiciona a seção de capturas ao conteúdo markdown (visualização web)
-          if (screenshotMd) {
-            markdownContent += `\n\n---\n\n## Capturas de Tela de Referência\n${screenshotMd}`;
-          }
-
-          // Step 4: Save DOCX
-          const docxKey = `documents/${ctx.user.id}/${input.id}/document.docx`;
-          const { key: savedDocxKey } = await storagePut(docxKey, docxBuffer, "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
-
-          // Step 5: Save everything
-          await updateDocument(input.id, {
-            title,
-            content: markdownContent,
-            docxStorageKey: savedDocxKey,
-            status: "done",
-          });
-
-          return { success: true, title };
-        } catch (error: any) {
-          await updateDocument(input.id, {
-            status: "error",
-            errorMessage: error?.message ?? "Erro desconhecido",
-          });
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: error?.message ?? "Erro ao processar documento",
-          });
-        }
+        // Dispara o processamento em BACKGROUND e retorna na hora.
+        // A tela acompanha o progresso via documents.getById (polling).
+        void runDocumentPipeline(doc, ctx.user.id, input.includeScreenshots ?? false);
+        return { started: true } as const;
       }),
 
     // Get download URL for DOCX

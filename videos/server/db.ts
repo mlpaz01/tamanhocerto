@@ -1,4 +1,4 @@
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users, documents, InsertDocument, Document } from "../drizzle/schema";
 
@@ -89,4 +89,18 @@ export async function updateDocument(id: number, data: Partial<InsertDocument>):
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.update(documents).set(data).where(eq(documents.id, id));
+}
+
+// Na inicialização: documentos presos em etapas de processamento significam que o
+// servidor reiniciou no meio do trabalho. Marca como erro para não ficarem "girando".
+export async function failStuckDocuments(): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.update(documents)
+      .set({ status: "error", errorMessage: "Processamento interrompido (servidor reiniciado). Gere novamente." })
+      .where(inArray(documents.status, ["pending", "uploading", "transcribing", "analyzing", "generating"]));
+  } catch (e) {
+    console.warn("[Database] failStuckDocuments:", e);
+  }
 }

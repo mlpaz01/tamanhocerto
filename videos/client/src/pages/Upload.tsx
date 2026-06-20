@@ -28,6 +28,7 @@ export default function UploadPage() {
   const [docId, setDocId] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const utils = trpc.useUtils();
   const createFromYoutube = trpc.documents.createFromYoutube.useMutation();
   const createFromUpload = trpc.documents.createFromUpload.useMutation();
   const processDoc = trpc.documents.process.useMutation();
@@ -128,15 +129,38 @@ export default function UploadPage() {
         setDocId(newDocId);
       }
 
-      // Process the document
+      // Dispara o processamento em background (retorna na hora)
       setProcessingStatus("transcribing");
       setLastActiveStatus("transcribing");
       await processDoc.mutateAsync({ id: newDocId, includeScreenshots: mode === "file" ? includeScreenshots : false });
-      setProcessingStatus("done");
 
-      setTimeout(() => {
-        navigate(`/document/${newDocId}`);
-      }, 1500);
+      // Acompanha o progresso por polling do status (resiliente a vídeos longos)
+      const activeStages: ProcessingStatus[] = ["uploading", "transcribing", "analyzing", "generating"];
+      while (true) {
+        await new Promise(r => setTimeout(r, 4000));
+        let d;
+        try {
+          d = await utils.documents.getById.fetch({ id: newDocId });
+        } catch {
+          continue; // erro transitório de rede — tenta de novo
+        }
+        if (!d) continue;
+        if (d.status === "done") {
+          setProcessingStatus("done");
+          setTimeout(() => navigate(`/document/${newDocId}`), 1200);
+          break;
+        }
+        if (d.status === "error") {
+          setProcessingStatus("error");
+          const msg = d.errorMessage ?? "Erro ao processar o vídeo.";
+          setErrorMessage(msg);
+          toast.error(msg);
+          break;
+        }
+        const st = (activeStages as string[]).includes(d.status) ? (d.status as ProcessingStatus) : "transcribing";
+        setProcessingStatus(st);
+        setLastActiveStatus(st);
+      }
     } catch (err: any) {
       setLastActiveStatus(processingStatus);
       setProcessingStatus("error");
