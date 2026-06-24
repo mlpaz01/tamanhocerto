@@ -66,6 +66,11 @@ export default function DocumentView() {
     { enabled: doc?.status === "done" && !!doc?.docxStorageKey }
   );
 
+  const pdfUrlQuery = trpc.documents.getPdfUrl.useQuery(
+    { id: docId },
+    { enabled: doc?.status === "done" && !!doc?.pdfStorageKey, retry: false }
+  );
+
   const handleDownloadDocx = async () => {
     if (!docxUrlQuery.data?.url) {
       toast.error("DOCX não disponível ainda.");
@@ -86,112 +91,17 @@ export default function DocumentView() {
     }
   };
 
-  const markdownToHtml = (md: string): string => {
-    return md
-      .replace(/^# (.+)$/gm, '<h1>$1</h1>')
-      .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-      .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-      .replace(/^---$/gm, '<hr/>')
-      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-      .replace(/^- (.+)$/gm, '<li>$1</li>')
-      .replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
-      .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
-      .replace(/\|(.+)\|/g, (match) => {
-        const cells = match.split('|').filter(c => c.trim());
-        const isHeader = cells.some(c => /^[-:]+$/.test(c.trim()));
-        if (isHeader) return '';
-        const tag = 'td';
-        return '<tr>' + cells.map(c => `<${tag}>${c.trim()}</${tag}>`).join('') + '</tr>';
-      })
-      .replace(/(<tr>[\s\S]+?<\/tr>)/g, (match) => `<table>${match}</table>`)
-      .replace(/\n{2,}/g, '</p><p>')
-      .replace(/^(?!<[h1-6|t|l|b|h]).+$/gm, (line) => line ? line : '');
-  };
-
   const handleDownloadPdf = () => {
-    if (!doc?.content) return;
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-
-    const htmlContent = doc.content
-      .split('\n')
-      .map(line => {
-        if (/^# /.test(line)) return `<h1>${line.slice(2)}</h1>`;
-        if (/^## /.test(line)) return `<h2>${line.slice(3)}</h2>`;
-        if (/^### /.test(line)) return `<h3>${line.slice(4)}</h3>`;
-        if (/^---$/.test(line.trim())) return '<hr/>';
-        if (/^- /.test(line)) return `<li>${line.slice(2).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/\*([^*]+)\*/g, '<em>$1</em>')}</li>`;
-        if (/^\d+\.\s/.test(line)) return `<li>${line.replace(/^\d+\.\s/, '').replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')}</li>`;
-        if (/^\|/.test(line)) {
-          if (/^\|[-|\s:]+\|/.test(line)) return '';
-          const cells = line.split('|').filter((_, i, a) => i > 0 && i < a.length - 1);
-          const isFirst = true;
-          return `<tr>${cells.map(c => `<td>${c.trim().replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')}</td>`).join('')}</tr>`;
-        }
-        if (!line.trim()) return '<br/>';
-        return `<p>${line.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/\*([^*]+)\*/g, '<em>$1</em>')}</p>`;
-      })
-      .join('\n')
-      .replace(/((<tr>[\s\S]*?<\/tr>\n?)+)/g, (tables) => `<table>${tables}</table>`);
-
-    printWindow.document.write(`<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>${doc.title}</title>
-  <link href="https://fonts.googleapis.com/css2?family=Calibri:wght@400;700&display=swap" rel="stylesheet">
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Calibri, 'Segoe UI', Arial, sans-serif; font-size: 11pt; color: #1a1a1a; line-height: 1.65; padding: 0; }
-    .page { max-width: 210mm; margin: 0 auto; padding: 20mm 22mm; }
-    .doc-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #003087; padding-bottom: 8px; margin-bottom: 32px; }
-    .doc-header .brand { font-size: 9pt; color: #86888a; }
-    .doc-header .date { font-size: 9pt; color: #86888a; }
-    .cover { text-align: center; padding: 60px 0 80px; border-bottom: 1px solid #eee; margin-bottom: 48px; }
-    .cover h1 { font-size: 26pt; color: #003087; font-weight: 700; margin-bottom: 12px; }
-    .cover .subtitle { font-size: 12pt; color: #86888a; }
-    .cover .meta { font-size: 10pt; color: #86888a; margin-top: 8px; }
-    h1 { font-size: 16pt; color: #003087; font-weight: 700; margin: 32px 0 12px; padding-bottom: 6px; border-bottom: 2px solid #003087; }
-    h2 { font-size: 13pt; color: #003087; font-weight: 700; margin: 24px 0 10px; }
-    h3 { font-size: 11pt; color: #1a1a2e; font-weight: 700; margin: 18px 0 8px; }
-    p { margin: 6px 0 10px; }
-    li { margin: 4px 0 4px 20px; list-style: disc; }
-    hr { border: none; border-top: 1px solid #ddd; margin: 20px 0; }
-    blockquote { border-left: 4px solid #003087; padding: 8px 16px; color: #555; font-style: italic; margin: 12px 0; background: #f8f9fb; }
-    table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 10pt; }
-    table tr:first-child td { background: #003087; color: white; font-weight: 700; padding: 8px 12px; }
-    td { border: 1px solid #ddd; padding: 7px 12px; vertical-align: top; }
-    tr:nth-child(even) td { background: #f5f7fa; }
-    strong { font-weight: 700; }
-    em { font-style: italic; }
-    .doc-footer { border-top: 1px solid #ddd; margin-top: 48px; padding-top: 10px; text-align: center; font-size: 9pt; color: #86888a; }
-    @media print {
-      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .page { padding: 15mm 18mm; }
-      h1, h2 { page-break-after: avoid; }
-      table { page-break-inside: avoid; }
+    if (!pdfUrlQuery.data?.url) {
+      toast.error("PDF não disponível para este documento.");
+      return;
     }
-  </style>
-</head>
-<body>
-  <div class="page">
-    <div class="doc-header">
-      <span class="brand">VideoDoc Consultivo &nbsp;|&nbsp; Padrão Deloitte</span>
-      <span class="date">${new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
-    </div>
-    <div class="cover">
-      <h1>${doc.title}</h1>
-      <div class="subtitle">Documentação Consultiva</div>
-      <div class="meta">Confidencial — Para uso interno</div>
-    </div>
-    ${htmlContent}
-    <div class="doc-footer">Documento gerado automaticamente pela plataforma VideoDoc Consultivo</div>
-  </div>
-  <script>window.onload = () => { setTimeout(() => window.print(), 400); }<\/script>
-</body>
-</html>`);
-    printWindow.document.close();
+    const a = document.createElement("a");
+    a.href = pdfUrlQuery.data.url;
+    a.download = `${doc?.title ?? "documento"}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
 
   if (isLoading) {
@@ -245,15 +155,18 @@ export default function DocumentView() {
 
           {doc.status === "done" && (
             <div className="flex items-center gap-2 shrink-0">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleDownloadPdf}
-                className="gap-1.5 text-xs h-8"
-              >
-                <Download className="w-3.5 h-3.5" />
-                PDF
-              </Button>
+              {doc.pdfStorageKey && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDownloadPdf}
+                  disabled={!pdfUrlQuery.data?.url}
+                  className="gap-1.5 text-xs h-8"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  PDF
+                </Button>
+              )}
               <Button
                 size="sm"
                 onClick={handleDownloadDocx}

@@ -32,4 +32,7 @@ export const ENV = {
   // Ferramentas de áudio (necessárias em ambos os modos)
   ytDlpPath: process.env.YTDLP_PATH ?? "yt-dlp",
   ffmpegPath: process.env.FFMPEG_PATH ?? "ffmpeg",
+
+  // Conversão DOCX -> PDF (LibreOffice headless)
+  libreofficePath: process.env.LIBREOFFICE_PATH ?? "soffice",
 };

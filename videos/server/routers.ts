@@ -19,6 +19,7 @@ import { transcribeAudio } from "./_core/voiceTranscription";
 import { extractKeyFrames, type ExtractedFrame } from "./_core/frameExtractor";
 import { generateDeloitteDocument, formatDocumentAsMarkdown, generateSpecDocument } from "./documentGenerator";
 import { generateDocx, generateSpecDocx } from "./docxGenerator";
+import { docxBufferToPdf } from "./pdfGenerator";
 import { storagePut, storageGet, storageGetSignedUrl, storagePath } from "./storage";
 import type { Document } from "../drizzle/schema";
 
@@ -97,8 +98,24 @@ async function runDocumentPipeline(doc: Document, userId: number, includeScreens
     const docxKey = `documents/${userId}/${doc.id}/document.docx`;
     const { key: savedDocxKey } = await storagePut(docxKey, docxBuffer, "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
 
-    await updateDocument(doc.id, { title, content: markdownContent, docxStorageKey: savedDocxKey, status: "done" });
-    console.log(`[Pipeline] doc ${doc.id} concluído: ${title}`);
+    // PDF (best-effort: se o LibreOffice falhar, não derruba o documento)
+    let pdfStorageKey: string | undefined;
+    try {
+      const pdfBuffer = await docxBufferToPdf(docxBuffer);
+      const r = await storagePut(`documents/${userId}/${doc.id}/document.pdf`, pdfBuffer, "application/pdf");
+      pdfStorageKey = r.key;
+    } catch (e) {
+      console.warn(`[PDF] conversão falhou para doc ${doc.id}:`, e);
+    }
+
+    await updateDocument(doc.id, {
+      title,
+      content: markdownContent,
+      docxStorageKey: savedDocxKey,
+      ...(pdfStorageKey ? { pdfStorageKey } : {}),
+      status: "done",
+    });
+    console.log(`[Pipeline] doc ${doc.id} concluído: ${title} (pdf=${pdfStorageKey ? "ok" : "nao"})`);
   } catch (error: any) {
     console.error(`[Pipeline] doc ${doc.id} falhou:`, error?.message ?? error);
     await updateDocument(doc.id, { status: "error", errorMessage: error?.message ?? "Erro desconhecido" }).catch(() => {});
@@ -240,6 +257,18 @@ export const appRouter = router({
         if (doc.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
         if (!doc.docxStorageKey) throw new TRPCError({ code: "NOT_FOUND", message: "DOCX não gerado ainda" });
         const url = await storageGetSignedUrl(doc.docxStorageKey);
+        return { url };
+      }),
+
+    // Get download URL for PDF
+    getPdfUrl: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const doc = await getDocumentById(input.id);
+        if (!doc) throw new TRPCError({ code: "NOT_FOUND" });
+        if (doc.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+        if (!doc.pdfStorageKey) throw new TRPCError({ code: "NOT_FOUND", message: "PDF não gerado ainda" });
+        const url = await storageGetSignedUrl(doc.pdfStorageKey);
         return { url };
       }),
 
