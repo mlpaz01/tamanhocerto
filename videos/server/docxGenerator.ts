@@ -15,6 +15,7 @@ import {
   Header,
   Footer,
   ImageRun,
+  LevelFormat,
 } from "docx";
 import type { DeloitteDocument, SpecDocument } from "./documentGenerator";
 import { jpegSize, type ExtractedFrame } from "./_core/frameExtractor";
@@ -92,9 +93,9 @@ function buildTable(lines: string[]): Table {
           shading: isHeader ? { type: ShadingType.CLEAR, fill: "003087", color: "auto" } : undefined,
           margins: { top: 60, bottom: 60, left: 100, right: 100 },
           children: [new Paragraph({
-            children: inlineRuns(cell, { bold: isHeader, size: 20 }).map(r =>
-              isHeader ? new TextRun({ text: (r as any).text ?? "", bold: true, color: "FFFFFF", font: "Calibri", size: 20 }) : r
-            ),
+            children: isHeader
+              ? [new TextRun({ text: cell.replace(/[*`]/g, ""), bold: true, color: "FFFFFF", font: "Calibri", size: 20 })]
+              : inlineRuns(cell, { size: 20 }),
           })],
         })
       ),
@@ -204,6 +205,18 @@ function coverAndShell(title: string, subtitle: string, headerLabel: string, foo
   return new Document({
     creator: "VideoDoc",
     title,
+    numbering: {
+      config: [{
+        reference: "default-numbering",
+        levels: [{
+          level: 0,
+          format: LevelFormat.DECIMAL,
+          text: "%1.",
+          alignment: AlignmentType.START,
+          style: { paragraph: { indent: { left: 540, hanging: 260 } } },
+        }],
+      }],
+    },
     styles: {
       default: { document: { run: { font: "Calibri", size: 22, color: "1A1A1A" }, paragraph: { spacing: { line: 276 } } } },
       paragraphStyles: [
