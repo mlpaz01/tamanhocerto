@@ -15,8 +15,8 @@ async function main() {
   const rows = await db.select().from(documents).where(eq(documents.status, "done"));
   let ok = 0, skip = 0, fail = 0;
   for (const d of rows) {
-    // Reprocessa os que ainda não têm PDF (os antigos, com DOCX possivelmente inválido)
-    if (!d.content || d.pdfStorageKey) { skip++; continue; }
+    // Regenera DOCX (corrigido) + PDF de todos os concluídos que têm conteúdo
+    if (!d.content) { skip++; continue; }
     try {
       const docxBuf = await generateSpecDocx({ title: d.title, markdown: d.content });
       const { key: docxKey } = await storagePut(`documents/${d.userId}/${d.id}/document.docx`, docxBuf, "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
