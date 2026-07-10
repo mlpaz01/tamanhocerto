@@ -16,7 +16,9 @@ import {
   createUser,
 } from "./db";
 import { transcribeAudio } from "./_core/voiceTranscription";
-import { extractKeyFrames, type ExtractedFrame } from "./_core/frameExtractor";
+import { extractKeyFrames } from "./_core/frameExtractor";
+import { classifyFrames, galleryMarkdown, buildSpecWebMarkdown, type ClassifiedFrame } from "./_core/frameClassifier";
+import { extractParticipants, type ParticipantsResult } from "./_core/participantExtractor";
 import { generateDeloitteDocument, formatDocumentAsMarkdown, generateSpecDocument } from "./documentGenerator";
 import { generateDocx, generateSpecDocx } from "./docxGenerator";
 import { docxBufferToPdf } from "./pdfGenerator";
@@ -58,41 +60,63 @@ async function runDocumentPipeline(doc: Document, userId: number, includeScreens
     }
     await updateDocument(doc.id, { transcription, status: "analyzing" });
 
-    // Capturas de tela (apenas para vídeo enviado)
-    let screenshots: ExtractedFrame[] = [];
-    let screenshotMd = "";
+    // Capturas de tela + participantes (só para vídeo enviado; ambos best-effort e independentes —
+    // cada um no seu try/catch para uma feature opcional nunca derrubar o documento inteiro).
+    let classified: ClassifiedFrame[] = [];
+    let participants: ParticipantsResult | null = null;
+    const urlByIndex = new Map<number, string>();
+
     if (includeScreenshots && !isYoutube && doc.videoStorageKey) {
+      const localVideo = storagePath(doc.videoStorageKey);
+
+      // Extrai (mais frames, já que alguns serão descartados) e classifica: descarta câmera/
+      // galeria, mantém telas, com legenda factual. Em falha, classifyFrames degrada p/ "mantém
+      // tudo" — nunca lança.
       try {
-        const frames = await extractKeyFrames(storagePath(doc.videoStorageKey), 12);
-        for (let i = 0; i < frames.length; i++) {
-          const { key } = await storagePut(`documents/${userId}/${doc.id}/shot_${i + 1}.jpg`, frames[i].buffer, "image/jpeg");
-          const url = await storageGetSignedUrl(key);
-          screenshotMd += `\n![${frames[i].caption}](${url})\n\n*${frames[i].caption}*\n`;
-        }
-        screenshots = frames;
+        const frames = await extractKeyFrames(localVideo, 16);
+        classified = await classifyFrames(frames);
       } catch (e) {
-        console.warn("[Screenshots] falha ao extrair frames:", e);
+        console.warn("[Screenshots] extração/classificação falhou:", e);
+      }
+
+      // Upload eager de TODAS as capturas mantidas (barato — disco local); a decisão de quais vão
+      // inline vs. galeria vem depois, via resolveScreenshotTokens.
+      for (const f of classified) {
+        if (!f.keep) continue;
+        try {
+          const { key } = await storagePut(`documents/${userId}/${doc.id}/shot_${f.index + 1}.jpg`, f.buffer, "image/jpeg");
+          urlByIndex.set(f.index, await storageGetSignedUrl(key));
+        } catch (e) {
+          console.warn(`[Screenshots] upload do frame ${f.index} falhou:`, e);
+        }
+      }
+
+      // Participantes — independente das capturas; falha retorna lista vazia, não lança.
+      try {
+        participants = await extractParticipants(localVideo);
+      } catch (e) {
+        console.warn("[Participants] extração falhou:", e);
       }
     }
 
     await updateDocument(doc.id, { status: "generating" });
 
+    const keptFrames = classified.filter(f => f.keep);
+
     let title: string;
     let markdownContent: string;
     let docxBuffer: Buffer;
     if (doc.docType === "spec") {
-      const spec = await generateSpecDocument(transcription);
+      const spec = await generateSpecDocument(transcription, keptFrames);
       title = spec.title;
-      markdownContent = spec.markdown;
-      docxBuffer = await generateSpecDocx(spec, screenshots);
+      markdownContent = buildSpecWebMarkdown(spec.markdown, keptFrames, urlByIndex);
+      docxBuffer = await generateSpecDocx(spec, keptFrames, participants);
     } else {
       const deloitteDoc = await generateDeloitteDocument(transcription);
       title = deloitteDoc.title;
-      markdownContent = formatDocumentAsMarkdown(deloitteDoc);
-      docxBuffer = await generateDocx(deloitteDoc, screenshots);
-    }
-    if (screenshotMd) {
-      markdownContent += `\n\n---\n\n## Capturas de Tela de Referência\n${screenshotMd}`;
+      // Deloitte não usa marcadores inline: capturas (já filtradas) na galeria no fim.
+      markdownContent = formatDocumentAsMarkdown(deloitteDoc) + galleryMarkdown(keptFrames, urlByIndex);
+      docxBuffer = await generateDocx(deloitteDoc, keptFrames, participants);
     }
 
     const docxKey = `documents/${userId}/${doc.id}/document.docx`;
@@ -115,6 +139,17 @@ async function runDocumentPipeline(doc: Document, userId: number, includeScreens
       ...(pdfStorageKey ? { pdfStorageKey } : {}),
       status: "done",
     });
+
+    // Participantes: gravação SEPARADA e best-effort. Se a coluna `participants` ainda não existir
+    // no banco (ex.: deploy que reiniciou antes do ALTER TABLE), não queremos perder o documento
+    // já concluído — apenas logamos e seguimos.
+    if (participants && participants.names.length) {
+      try {
+        await updateDocument(doc.id, { participants: JSON.stringify(participants) });
+      } catch (e: any) {
+        console.warn(`[Participants] não gravou participantes do doc ${doc.id} (coluna ausente?):`, e?.message ?? e);
+      }
+    }
     console.log(`[Pipeline] doc ${doc.id} concluído: ${title} (pdf=${pdfStorageKey ? "ok" : "nao"})`);
   } catch (error: any) {
     console.error(`[Pipeline] doc ${doc.id} falhou:`, error?.message ?? error);

@@ -8,6 +8,8 @@ import { ENV } from "../server/_core/env";
 import { createDocument, updateDocument, getUserByEmail } from "../server/db";
 import { transcribeAudio } from "../server/_core/voiceTranscription";
 import { extractKeyFrames } from "../server/_core/frameExtractor";
+import { classifyFrames, galleryMarkdown, buildSpecWebMarkdown } from "../server/_core/frameClassifier";
+import { extractParticipants } from "../server/_core/participantExtractor";
 import { generateDeloitteDocument, formatDocumentAsMarkdown, generateSpecDocument } from "../server/documentGenerator";
 import { generateDocx, generateSpecDocx } from "../server/docxGenerator";
 import { storagePath, storagePut, storageGetSignedUrl } from "../server/storage";
@@ -47,30 +49,40 @@ async function main() {
   console.log("Transcricao OK:", t.text.length, "chars");
 
   console.log("Extraindo capturas UMA vez...");
-  const frames = await extractKeyFrames(storagePath(KEY), 12);
-  console.log("Capturas:", frames.length);
+  const rawFrames = await extractKeyFrames(storagePath(KEY), 16);
+  console.log("Capturas extraidas:", rawFrames.length);
+  console.log("Classificando capturas (descarta camera/galeria)...");
+  const classified = await classifyFrames(rawFrames);
+  const keptFrames = classified.filter(f => f.keep);
+  console.log(`Capturas mantidas: ${keptFrames.length}/${classified.length}`);
+  console.log("Extraindo participantes...");
+  const participants = await extractParticipants(storagePath(KEY));
+  console.log(`Participantes: ${participants.names.length} (${participants.names.join(", ") || "nenhum"})`);
 
   const results: any[] = [];
   for (const docType of ["deloitte", "spec"] as const) {
     try {
       const id = await createDocument({ userId, title: "Teste " + docType, sourceType: "upload", docType, videoStorageKey: KEY, status: "generating" });
-      let shotMd = "";
-      for (let i = 0; i < frames.length; i++) {
-        const { key } = await storagePut(`documents/${userId}/${id}/shot_${i + 1}.jpg`, frames[i].buffer, "image/jpeg");
-        const url = await storageGetSignedUrl(key);
-        shotMd += `\n![${frames[i].caption}](${url})\n\n*${frames[i].caption}*\n`;
+      // Upload eager das capturas mantidas -> URL por índice
+      const urlByIndex = new Map<number, string>();
+      for (const f of keptFrames) {
+        const { key } = await storagePut(`documents/${userId}/${id}/shot_${f.index + 1}.jpg`, f.buffer, "image/jpeg");
+        urlByIndex.set(f.index, await storageGetSignedUrl(key));
       }
       let title: string, md: string, buf: Buffer;
       if (docType === "spec") {
-        const s = await generateSpecDocument(t.text);
-        title = s.title; md = s.markdown; buf = await generateSpecDocx(s, frames);
+        const s = await generateSpecDocument(t.text, keptFrames);
+        title = s.title;
+        md = buildSpecWebMarkdown(s.markdown, keptFrames, urlByIndex);
+        buf = await generateSpecDocx(s, keptFrames, participants);
       } else {
         const d = await generateDeloitteDocument(t.text);
-        title = d.title; md = formatDocumentAsMarkdown(d); buf = await generateDocx(d, frames);
+        title = d.title;
+        md = formatDocumentAsMarkdown(d) + galleryMarkdown(keptFrames, urlByIndex);
+        buf = await generateDocx(d, keptFrames, participants);
       }
-      if (shotMd) md += `\n\n---\n\n## Capturas de Tela de Referencia\n${shotMd}`;
       const { key } = await storagePut(`documents/${userId}/${id}/document.docx`, buf, "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
-      await updateDocument(id, { title, content: md, docxStorageKey: key, status: "done" });
+      await updateDocument(id, { title, content: md, docxStorageKey: key, ...(participants.names.length ? { participants: JSON.stringify(participants) } : {}), status: "done" });
       console.log(`[${docType}] OK -> doc id=${id} | titulo='${title}'`);
       results.push({ docType, id, title });
     } catch (e: any) {

@@ -1,6 +1,12 @@
 // Regenera DOCX (corrigido p/ Office Online) + PDF para documentos concluídos,
 // a partir do conteúdo markdown já salvo — sem usar Groq/OpenRouter.
 // Uso: pnpm exec tsx scripts/backfill-pdf.ts
+//
+// LIMITAÇÃO CONHECIDA: chama generateSpecDocx SEM passar screenshots (os buffers não são
+// re-extraídos aqui). Em docs criados a partir da feature de screenshots por etapa, os
+// {{SCREENSHOT:N}} do markdown salvo não têm frame para renderizar — a imagem inline vira
+// linha ignorada (não some texto, mas a captura não aparece). Para regenerar COM as imagens,
+// é preciso re-rodar o pipeline completo (com o vídeo), não este backfill.
 import { eq } from "drizzle-orm";
 import { getDb, updateDocument } from "../server/db";
 import { documents } from "../drizzle/schema";

@@ -1,4 +1,5 @@
 import { invokeLLM } from "./_core/llm";
+import type { ClassifiedFrame } from "./_core/frameClassifier";
 
 export interface DeloitteDocument {
   title: string;
@@ -108,8 +109,16 @@ Lista de requisitos (visualização, atualização, travas sistêmicas, rastreab
 ## 4. Especificação da Interface (UI)
 ### 4.1. Layout Geral
 Header, navegação, área de conteúdo.
-### 4.2. Componentes
-Tabela Markdown: | Componente | Descrição | Estilo/Comportamento |
+### 4.2. Telas e Componentes
+Descreva cada tela relevante. Se forem fornecidas CAPTURAS DE TELA (lista no fim do prompt do
+usuário), crie uma sub-seção "### 4.N Tela: <assunto>" para cada captura relevante e insira o
+marcador correspondente **numa linha isolada** exatamente onde a imagem deve aparecer:
+
+{{SCREENSHOT:0}}
+
+Use o número exato da captura. Só referencie capturas que existirem na lista. Não repita a mesma
+captura. Descreva os campos/componentes de cada tela em texto e tabelas Markdown
+(| Componente | Descrição | Estilo/Comportamento |).
 
 ## 5. Mapeamento de Campos e Integração de API
 Tabela(s) Markdown: | Campo | Descrição | Origem/API | Observações |
@@ -129,15 +138,28 @@ Regras:
 - Quando a transcrição não detalhar algo, faça suposições técnicas razoáveis e marque com "(a confirmar)".
 - Use tabelas Markdown de verdade (com | e cabeçalho com ---).
 - NÃO use blocos de código de diagrama (mermaid, graphviz, ASCII art). Descreva fluxos em texto, listas numeradas ou tabelas.
+- Capturas de tela: use SOMENTE os marcadores {{SCREENSHOT:N}} descritos na seção 4, com o número
+  exato da lista fornecida. NUNCA descreva uma imagem que não esteja na lista, e não invente marcadores.
 - Responda EXCLUSIVAMENTE com JSON puro (sem code fences) no formato:
 { "title": "...", "markdown": "<documento markdown completo começando com # título>" }`;
 
-export async function generateSpecDocument(transcription: string): Promise<SpecDocument> {
+function buildScreenshotList(frames: ClassifiedFrame[]): string {
+  const kept = frames.filter(f => f.keep);
+  if (!kept.length) return "";
+  const lines = kept.map(f =>
+    `${f.index}. ${f.caption}${f.stageHint ? ` — contexto: ${f.stageHint}` : ""}`);
+  return `\n\nCAPTURAS DE TELA DISPONÍVEIS (ordem cronológica; use o marcador {{SCREENSHOT:N}} onde cada uma se encaixa):\n${lines.join("\n")}`;
+}
+
+export async function generateSpecDocument(
+  transcription: string,
+  classifiedFrames: ClassifiedFrame[] = []
+): Promise<SpecDocument> {
   const userMessage = `Analise a transcrição de reunião abaixo e gere a ESPECIFICAÇÃO TÉCNICA completa em markdown, seguindo a estrutura definida:
 
 ---
 ${transcription}
----`;
+---${buildScreenshotList(classifiedFrames)}`;
 
   const response = await invokeLLM({
     messages: [

@@ -19,6 +19,26 @@ import {
 } from "docx";
 import type { DeloitteDocument, SpecDocument } from "./documentGenerator";
 import { jpegSize, type ExtractedFrame } from "./_core/frameExtractor";
+import { resolveScreenshotTokens, matchCanonicalToken, type ClassifiedFrame } from "./_core/frameClassifier";
+
+const MAX_IMG_W = 560; // largura útil da página (px @96dpi)
+
+// Uma captura (imagem + legenda) — reaproveitado tanto inline (no meio do texto) quanto na galeria.
+function renderScreenshotBlock(frame: ExtractedFrame): Block[] {
+  const { width, height } = jpegSize(frame.buffer);
+  const w = Math.min(MAX_IMG_W, width);
+  const h = Math.round((height / width) * w);
+  return [
+    new Paragraph({
+      children: [new ImageRun({ type: "jpg", data: frame.buffer, transformation: { width: w, height: h } })],
+      spacing: { before: 160, after: 40 },
+    }),
+    new Paragraph({
+      children: [new TextRun({ text: frame.caption, italics: true, color: "86888A", size: 18, font: "Calibri" })],
+      spacing: { after: 160 },
+    }),
+  ];
+}
 
 function screenshotBlocks(frames: ExtractedFrame[]): Block[] {
   if (!frames.length) return [];
@@ -30,18 +50,29 @@ function screenshotBlocks(frames: ExtractedFrame[]): Block[] {
       border: { bottom: { color: "003087", size: 12, style: BorderStyle.SINGLE } },
     }),
   ];
-  const MAX_W = 560; // largura útil da página (px @96dpi)
-  for (const f of frames) {
-    const { width, height } = jpegSize(f.buffer);
-    const w = Math.min(MAX_W, width);
-    const h = Math.round((height / width) * w);
+  for (const f of frames) blocks.push(...renderScreenshotBlock(f));
+  return blocks;
+}
+
+// Bloco de participantes no cabeçalho (após a capa). Só renderiza se houver nomes.
+function participantsBlock(participants?: { names: string[]; possiblyIncomplete: boolean } | null): Block[] {
+  if (!participants || !participants.names.length) return [];
+  const blocks: Block[] = [
+    new Paragraph({
+      children: [new TextRun({ text: "Participantes", bold: true, color: "003087", size: 24, font: "Calibri" })],
+      heading: HeadingLevel.HEADING_2,
+      spacing: { before: 120, after: 120 },
+      border: { bottom: { color: "003087", size: 6, style: BorderStyle.SINGLE } },
+    }),
+    new Paragraph({
+      children: [new TextRun({ text: participants.names.join("  ·  "), font: "Calibri", size: 22, color: "1A1A1A" })],
+      spacing: { after: participants.possiblyIncomplete ? 40 : 240 },
+    }),
+  ];
+  if (participants.possiblyIncomplete) {
     blocks.push(new Paragraph({
-      children: [new ImageRun({ type: "jpg", data: f.buffer, transformation: { width: w, height: h } })],
-      spacing: { before: 160, after: 40 },
-    }));
-    blocks.push(new Paragraph({
-      children: [new TextRun({ text: f.caption, italics: true, color: "86888A", size: 18, font: "Calibri" })],
-      spacing: { after: 160 },
+      children: [new TextRun({ text: "Lista possivelmente incompleta — nem todos os nomes estavam legíveis nos quadros de vídeo.", italics: true, color: "86888A", size: 18, font: "Calibri" })],
+      spacing: { after: 240 },
     }));
   }
   return blocks;
@@ -107,13 +138,24 @@ function buildTable(lines: string[]): Table {
   });
 }
 
-export function parseMarkdownToBlocks(markdown: string): Block[] {
+export function parseMarkdownToBlocks(markdown: string, frameByIndex?: Map<number, ExtractedFrame>): Block[] {
   const blocks: Block[] = [];
   const lines = markdown.split("\n");
   let i = 0;
 
   while (i < lines.length) {
     const line = lines[i];
+
+    // Marcador de captura canônico (já normalizado por resolveScreenshotTokens): {{SCREENSHOT:N}}
+    // sozinho na linha. Renderiza a imagem ali. Sem o mapa (ex.: Deloitte), a linha é ignorada
+    // em vez de virar texto literal.
+    const tokenIdx = matchCanonicalToken(line);
+    if (tokenIdx !== null) {
+      const frame = frameByIndex?.get(tokenIdx);
+      if (frame) blocks.push(...renderScreenshotBlock(frame));
+      i++;
+      continue;
+    }
 
     // Fenced code blocks (```), incl. mermaid/diagramas — não renderizamos como código cru.
     if (line.trim().startsWith("```")) {
@@ -188,7 +230,10 @@ function sectionHeader(title: string, number: string): Paragraph {
   });
 }
 
-function coverAndShell(title: string, subtitle: string, headerLabel: string, footerLabel: string, body: Block[]): Document {
+function coverAndShell(
+  title: string, subtitle: string, headerLabel: string, footerLabel: string, body: Block[],
+  participants?: { names: string[]; possiblyIncomplete: boolean } | null
+): Document {
   const cover: Block[] = [
     new Paragraph({ children: [new TextRun({ text: "", break: 1 })], spacing: { before: 2000 } }),
     new Paragraph({
@@ -200,6 +245,7 @@ function coverAndShell(title: string, subtitle: string, headerLabel: string, foo
       alignment: AlignmentType.CENTER, spacing: { after: 100 },
     }),
     new Paragraph({ children: [new PageBreak()] }),
+    ...participantsBlock(participants),
   ];
 
   return new Document({
@@ -234,7 +280,13 @@ function coverAndShell(title: string, subtitle: string, headerLabel: string, foo
   });
 }
 
-export async function generateDocx(doc: DeloitteDocument, screenshots: ExtractedFrame[] = []): Promise<Buffer> {
+export async function generateDocx(
+  doc: DeloitteDocument,
+  screenshots: ExtractedFrame[] = [],
+  participants?: { names: string[]; possiblyIncomplete: boolean } | null
+): Promise<Buffer> {
+  // Deloitte: sem marcadores inline (o prompt não os usa). As capturas — já filtradas e com
+  // legenda factual — entram na galeria no fim, como antes.
   const body: Block[] = [
     sectionHeader("Visão Executiva", "1"), ...parseMarkdownToBlocks(doc.executiveSummary),
     sectionHeader("Processo Ponta a Ponta", "2"), ...parseMarkdownToBlocks(doc.endToEndProcess),
@@ -244,15 +296,32 @@ export async function generateDocx(doc: DeloitteDocument, screenshots: Extracted
     sectionHeader("Próximos Passos", "6"), ...parseMarkdownToBlocks(doc.nextSteps),
     ...screenshotBlocks(screenshots),
   ];
-  const docx = coverAndShell(doc.title, "Documentação Consultiva", "VideoDoc | Padrão Deloitte", "Confidencial — Para uso interno", body);
+  const docx = coverAndShell(doc.title, "Documentação Consultiva", "VideoDoc | Padrão Deloitte", "Confidencial — Para uso interno", body, participants);
   return await Packer.toBuffer(docx);
 }
 
-export async function generateSpecDocx(spec: SpecDocument, screenshots: ExtractedFrame[] = []): Promise<Buffer> {
+export async function generateSpecDocx(
+  spec: SpecDocument,
+  screenshots: ClassifiedFrame[] = [],
+  participants?: { names: string[]; possiblyIncomplete: boolean } | null
+): Promise<Buffer> {
   // A especificação já vem como markdown completo (com # título). Removemos o
   // primeiro H1 da capa para não duplicar com o título.
   const md = spec.markdown.replace(/^\s*#\s+.*\n/, "");
-  const body = [...parseMarkdownToBlocks(md), ...screenshotBlocks(screenshots)];
-  const docx = coverAndShell(spec.title, "Especificação Técnica", "VideoDoc | Especificação Técnica", "Documento técnico — Para a equipe de desenvolvimento", body);
+
+  // Só as capturas mantidas podem virar marcador. resolveScreenshotTokens valida/deduplica os
+  // {{SCREENSHOT:N}} e diz quais índices foram efetivamente usados no texto.
+  const kept = screenshots.filter(f => f.keep);
+  const { markdown: normalizedMd, usedIndices } = resolveScreenshotTokens(md, kept);
+  const byIndex = new Map<number, ExtractedFrame>(kept.map(f => [f.index, f]));
+
+  const body: Block[] = [...parseMarkdownToBlocks(normalizedMd, byIndex)];
+
+  // Capturas mantidas que o modelo não posicionou no texto ainda aparecem — na galeria final —
+  // para nenhuma captura relevante sumir silenciosamente.
+  const leftover = kept.filter(f => !usedIndices.has(f.index));
+  if (leftover.length) body.push(...screenshotBlocks(leftover));
+
+  const docx = coverAndShell(spec.title, "Especificação Técnica", "VideoDoc | Especificação Técnica", "Documento técnico — Para a equipe de desenvolvimento", body, participants);
   return await Packer.toBuffer(docx);
 }

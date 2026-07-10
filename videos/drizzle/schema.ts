@@ -34,6 +34,10 @@ export const documents = mysqlTable("documents", {
   content: text("content"),
   docxStorageKey: text("docxStorageKey"),
   pdfStorageKey: text("pdfStorageKey"),
+  // Participantes detectados nos frames iniciais do vídeo (JSON string):
+  // { names: string[], possiblyIncomplete: boolean }. Best-effort — pode ser null.
+  // EM PRODUÇÃO: aplicar via ALTER TABLE manual, NÃO via db:push (schema divergente).
+  participants: text("participants"),
   errorMessage: text("errorMessage"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
