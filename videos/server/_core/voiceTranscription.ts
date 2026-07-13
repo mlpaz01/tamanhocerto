@@ -87,17 +87,22 @@ export async function transcribeAudio(
     if (options.isYoutube || (isHttp(options.audioUrl) && /youtu\.?be/i.test(options.audioUrl))) {
       // yt-dlp baixa e (com ffmpeg) extrai a melhor trilha de áudio
       const ytOut = path.join(workDir, "yt.%(ext)s");
+      const ytArgs = [
+        "-x",
+        "--audio-format", "wav",
+        "--postprocessor-args", "ffmpeg:-ar 16000 -ac 1",
+        "-o", ytOut,
+        "--no-playlist",
+        "--no-warnings",
+      ];
+      // Só passa --ffmpeg-location se for caminho absoluto/diretório (senão yt-dlp acha no PATH)
+      if (/[\\/]/.test(ENV.ffmpegPath)) ytArgs.push("--ffmpeg-location", ENV.ffmpegPath);
+      // Cookies (opcional) driblam o bloqueio "confirm you're not a bot"
+      if (ENV.ytdlpCookies) ytArgs.push("--cookies", ENV.ytdlpCookies);
+      ytArgs.push(options.audioUrl);
       const yt = await run(
         ENV.ytDlpPath,
-        [
-          "-x",
-          "--audio-format", "wav",
-          "--postprocessor-args", "ffmpeg:-ar 16000 -ac 1",
-          "--ffmpeg-location", ENV.ffmpegPath,
-          "-o", ytOut,
-          "--no-playlist",
-          options.audioUrl,
-        ],
+        ytArgs,
         { timeoutMs: 15 * 60 * 1000 },
       );
       if (yt.code !== 0) {
