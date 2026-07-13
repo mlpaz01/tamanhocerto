@@ -17,6 +17,7 @@ import {
 } from "./db";
 import { transcribeAudio } from "./_core/voiceTranscription";
 import { extractKeyFrames } from "./_core/frameExtractor";
+import { downloadYoutubeVideo } from "./_core/youtube";
 import { classifyFrames, galleryMarkdown, buildSpecWebMarkdown, type ClassifiedFrame } from "./_core/frameClassifier";
 import { extractParticipants, type ParticipantsResult } from "./_core/participantExtractor";
 import { generateDeloitteDocument, formatDocumentAsMarkdown, generateSpecDocument } from "./documentGenerator";
@@ -35,9 +36,21 @@ async function runDocumentPipeline(doc: Document, userId: number, includeScreens
 
     let audioUrl: string;
     let isYoutube = false;
+    let localVideoKey: string | null = doc.videoStorageKey ?? null;
+
     if (doc.sourceType === "youtube" && doc.youtubeUrl) {
-      audioUrl = doc.youtubeUrl;
-      isYoutube = true;
+      if (includeScreenshots) {
+        // Baixa o VÍDEO do YouTube pro storage → habilita transcrição + capturas de tela.
+        const key = `videos/${userId}/yt_${doc.id}.mp4`;
+        await downloadYoutubeVideo(doc.youtubeUrl, storagePath(key));
+        await updateDocument(doc.id, { videoStorageKey: key });
+        localVideoKey = key;
+        audioUrl = storagePath(key);
+        isYoutube = false; // agora é um arquivo local
+      } else {
+        audioUrl = doc.youtubeUrl;
+        isYoutube = true;
+      }
     } else if (doc.videoStorageKey) {
       audioUrl = storagePath(doc.videoStorageKey);
     } else {
@@ -66,8 +79,8 @@ async function runDocumentPipeline(doc: Document, userId: number, includeScreens
     let participants: ParticipantsResult | null = null;
     const urlByIndex = new Map<number, string>();
 
-    if (includeScreenshots && !isYoutube && doc.videoStorageKey) {
-      const localVideo = storagePath(doc.videoStorageKey);
+    if (includeScreenshots && localVideoKey) {
+      const localVideo = storagePath(localVideoKey);
 
       // Extrai (mais frames, já que alguns serão descartados) e classifica: descarta câmera/
       // galeria, mantém telas, com legenda factual. Em falha, classifyFrames degrada p/ "mantém
