@@ -120,7 +120,27 @@ export async function grabYoutubeFrames(url: string, count = 12): Promise<Extrac
   }
 }
 
-// ---- Fallback: baixa o vídeo inteiro (<=720p) ----
+// ---- Link direto (Google Drive / Dropbox / URL): baixa o arquivo pro storage ----
+// O yt-dlp entende Google Drive (inclusive o aviso de vírus de arquivos grandes),
+// Dropbox e URLs diretas. Sem cookies e sem anti-bot como o do YouTube.
+export async function downloadVideoFromUrl(url: string, finalPath: string): Promise<void> {
+  const dir = path.dirname(finalPath);
+  await fs.mkdir(dir, { recursive: true });
+  const tag = `._url_${crypto.randomUUID().slice(0, 8)}`;
+  const outTmpl = path.join(dir, `${tag}.%(ext)s`);
+  const args = ["--no-playlist", "--no-warnings", "-o", outTmpl, url];
+  if (/[\\/]/.test(ENV.ffmpegPath)) args.push("--ffmpeg-location", ENV.ffmpegPath);
+  const r = await run(ENV.ytDlpPath, args, 30 * 60 * 1000);
+  const produced = (await fs.readdir(dir)).find(f => f.startsWith(tag));
+  if (r.code !== 0 || !produced) {
+    for (const f of (await fs.readdir(dir)).filter(f => f.startsWith(tag))) await fs.rm(path.join(dir, f), { force: true }).catch(() => {});
+    throw new Error(`Falha ao baixar do link: ${r.stderr.slice(-800)}`);
+  }
+  await fs.rm(finalPath, { force: true }).catch(() => {});
+  await fs.rename(path.join(dir, produced), finalPath);
+}
+
+// ---- Fallback: baixa o vídeo inteiro (<=720p) do YouTube ----
 export async function downloadYoutubeVideo(url: string, finalPath: string): Promise<void> {
   const dir = path.dirname(finalPath);
   await fs.mkdir(dir, { recursive: true });

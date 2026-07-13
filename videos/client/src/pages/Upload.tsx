@@ -10,7 +10,7 @@ import { getLoginUrl } from "@/const";
 import { toast } from "sonner";
 import { ProcessingSteps, type ProcessingStatus } from "@/components/ProcessingSteps";
 
-type UploadMode = "file" | "youtube";
+type UploadMode = "file" | "youtube" | "url";
 
 export default function UploadPage() {
   const [, navigate] = useLocation();
@@ -21,6 +21,7 @@ export default function UploadPage() {
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [youtubeUrl, setYoutubeUrl] = useState("");
+  const [directUrl, setDirectUrl] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStatus, setProcessingStatus] = useState<ProcessingStatus>("pending");
   const [lastActiveStatus, setLastActiveStatus] = useState<ProcessingStatus>("pending");
@@ -79,15 +80,21 @@ export default function UploadPage() {
     try {
       let newDocId: number;
 
-      if (mode === "youtube") {
-        if (!isValidYoutubeUrl(youtubeUrl)) {
+      if (mode === "youtube" || mode === "url") {
+        const link = mode === "url" ? directUrl.trim() : youtubeUrl.trim();
+        if (mode === "youtube" && !isValidYoutubeUrl(youtubeUrl)) {
           toast.error("URL do YouTube inválida.");
+          setIsProcessing(false);
+          return;
+        }
+        if (mode === "url" && !/^https?:\/\/.+/i.test(link)) {
+          toast.error("Cole um link válido (começando com http).");
           setIsProcessing(false);
           return;
         }
         setProcessingStatus("uploading");
         setLastActiveStatus("uploading");
-        const result = await createFromYoutube.mutateAsync({ youtubeUrl, docType });
+        const result = await createFromYoutube.mutateAsync({ youtubeUrl: link, docType });
         newDocId = result.id;
         setDocId(newDocId);
       } else {
@@ -132,7 +139,7 @@ export default function UploadPage() {
       // Dispara o processamento em background (retorna na hora)
       setProcessingStatus("transcribing");
       setLastActiveStatus("transcribing");
-      await processDoc.mutateAsync({ id: newDocId, includeScreenshots: mode === "file" ? includeScreenshots : false });
+      await processDoc.mutateAsync({ id: newDocId, includeScreenshots: mode === "youtube" ? false : includeScreenshots });
 
       // Acompanha o progresso por polling do status (resiliente a vídeos longos)
       const activeStages: ProcessingStatus[] = ["uploading", "transcribing", "analyzing", "generating"];
@@ -174,7 +181,10 @@ export default function UploadPage() {
     }
   };
 
-  const canSubmit = mode === "youtube" ? isValidYoutubeUrl(youtubeUrl) : !!selectedFile;
+  const canSubmit =
+    mode === "youtube" ? isValidYoutubeUrl(youtubeUrl)
+    : mode === "url" ? /^https?:\/\/.+/i.test(directUrl.trim())
+    : !!selectedFile;
 
   return (
     <div className="min-h-screen bg-background">
@@ -257,6 +267,16 @@ export default function UploadPage() {
             <Youtube className="w-4 h-4" />
             Link YouTube
           </button>
+          <button
+            onClick={() => setMode("url")}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200",
+              mode === "url" ? "bg-white text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <FileVideo className="w-4 h-4" />
+            Link direto (Drive)
+          </button>
         </div>
 
         {/* Upload area */}
@@ -318,7 +338,7 @@ export default function UploadPage() {
                   </div>
                 )}
               </div>
-            ) : (
+            ) : mode === "youtube" ? (
               <div className="space-y-3">
                 <div className="relative">
                   <Youtube className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -337,9 +357,27 @@ export default function UploadPage() {
                   <p className="text-xs text-accent font-medium">URL válida detectada.</p>
                 )}
               </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="relative">
+                  <FileVideo className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    type="url"
+                    placeholder="https://drive.google.com/file/d/.../view  (ou Dropbox / link direto .mp4)"
+                    value={directUrl}
+                    onChange={e => setDirectUrl(e.target.value)}
+                    className="pl-10 h-12 text-sm"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Cole o link do vídeo no Google Drive, Dropbox ou uma URL direta. O arquivo precisa estar
+                  compartilhado como <span className="font-medium">"qualquer pessoa com o link"</span>. O servidor
+                  baixa e processa — sem upload grande, com capturas de tela.
+                </p>
+              </div>
             )}
 
-            {mode === "file" && (
+            {mode !== "youtube" && (
               <label className="flex items-center gap-2 mt-4 text-sm text-muted-foreground cursor-pointer select-none">
                 <input
                   type="checkbox"

@@ -17,7 +17,7 @@ import {
 } from "./db";
 import { transcribeAudio } from "./_core/voiceTranscription";
 import { extractKeyFrames, type ExtractedFrame } from "./_core/frameExtractor";
-import { fetchYoutubeTranscript, grabYoutubeFrames } from "./_core/youtube";
+import { fetchYoutubeTranscript, grabYoutubeFrames, downloadVideoFromUrl } from "./_core/youtube";
 import { classifyFrames, galleryMarkdown, buildSpecWebMarkdown, type ClassifiedFrame } from "./_core/frameClassifier";
 import { extractParticipants, type ParticipantsResult } from "./_core/participantExtractor";
 import { generateDeloitteDocument, formatDocumentAsMarkdown, generateSpecDocument } from "./documentGenerator";
@@ -38,8 +38,28 @@ async function runDocumentPipeline(doc: Document, userId: number, includeScreens
     let rawFrames: ExtractedFrame[] = [];
     let participants: ParticipantsResult | null = null;
 
-    if (doc.sourceType === "youtube" && doc.youtubeUrl) {
-      // Transcrição: legenda automática do YouTube (sem baixar mídia). Fallback: baixa só o áudio + Groq.
+    const urlIsYoutube = doc.youtubeUrl ? /youtube\.com|youtu\.be/i.test(doc.youtubeUrl) : false;
+
+    if (doc.sourceType === "youtube" && doc.youtubeUrl && !urlIsYoutube) {
+      // LINK DIRETO (Google Drive / Dropbox / URL): baixa o vídeo pro storage e trata como upload.
+      const key = `videos/${userId}/url_${doc.id}.mp4`;
+      await downloadVideoFromUrl(doc.youtubeUrl, storagePath(key));
+      await updateDocument(doc.id, { videoStorageKey: key });
+      const localVideo = storagePath(key);
+      const r = await transcribeAudio({
+        audioUrl: localVideo, language: "pt",
+        prompt: "Transcrição de reunião de negócios em português brasileiro. Nomes de sistemas: PLM, RLM, WMS, SAP, ERP, Shopify.",
+      });
+      if ("error" in r) throw new Error(`Falha na transcrição: ${(r as any).error}. ${(r as any).details ?? ""}`);
+      transcription = (r as any).text ?? "";
+      if (includeScreenshots) {
+        try { rawFrames = await extractKeyFrames(localVideo, 16); }
+        catch (e) { console.warn("[Screenshots] extração falhou:", e); }
+        try { participants = await extractParticipants(localVideo); }
+        catch (e) { console.warn("[Participants] extração falhou:", e); }
+      }
+    } else if (doc.sourceType === "youtube" && doc.youtubeUrl) {
+      // YouTube: legenda automática (sem baixar mídia). Fallback: baixa só o áudio + Groq.
       let captionText: string | null = null;
       try { captionText = await fetchYoutubeTranscript(doc.youtubeUrl); } catch { /* ignore */ }
       if (captionText) {
@@ -53,7 +73,6 @@ async function runDocumentPipeline(doc: Document, userId: number, includeScreens
         if ("error" in r) throw new Error(`Falha na transcrição: ${(r as any).error}. ${(r as any).details ?? ""}`);
         transcription = (r as any).text ?? "";
       }
-      // Capturas: seek no stream do YouTube (sem baixar o vídeo inteiro).
       if (includeScreenshots) {
         try { rawFrames = await grabYoutubeFrames(doc.youtubeUrl, 16); }
         catch (e) { console.warn("[YouTube] captura de frames falhou:", e); }
