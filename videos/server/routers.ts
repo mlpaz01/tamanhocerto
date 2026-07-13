@@ -16,8 +16,8 @@ import {
   createUser,
 } from "./db";
 import { transcribeAudio } from "./_core/voiceTranscription";
-import { extractKeyFrames } from "./_core/frameExtractor";
-import { downloadYoutubeVideo } from "./_core/youtube";
+import { extractKeyFrames, type ExtractedFrame } from "./_core/frameExtractor";
+import { fetchYoutubeTranscript, grabYoutubeFrames } from "./_core/youtube";
 import { classifyFrames, galleryMarkdown, buildSpecWebMarkdown, type ClassifiedFrame } from "./_core/frameClassifier";
 import { extractParticipants, type ParticipantsResult } from "./_core/participantExtractor";
 import { generateDeloitteDocument, formatDocumentAsMarkdown, generateSpecDocument } from "./documentGenerator";
@@ -34,66 +34,59 @@ async function runDocumentPipeline(doc: Document, userId: number, includeScreens
   try {
     await updateDocument(doc.id, { status: "transcribing" });
 
-    let audioUrl: string;
-    let isYoutube = false;
-    let localVideoKey: string | null = doc.videoStorageKey ?? null;
+    let transcription: string;
+    let rawFrames: ExtractedFrame[] = [];
+    let participants: ParticipantsResult | null = null;
 
     if (doc.sourceType === "youtube" && doc.youtubeUrl) {
-      if (includeScreenshots) {
-        // Baixa o VÍDEO do YouTube pro storage → habilita transcrição + capturas de tela.
-        const key = `videos/${userId}/yt_${doc.id}.mp4`;
-        await downloadYoutubeVideo(doc.youtubeUrl, storagePath(key));
-        await updateDocument(doc.id, { videoStorageKey: key });
-        localVideoKey = key;
-        audioUrl = storagePath(key);
-        isYoutube = false; // agora é um arquivo local
+      // Transcrição: legenda automática do YouTube (sem baixar mídia). Fallback: baixa só o áudio + Groq.
+      let captionText: string | null = null;
+      try { captionText = await fetchYoutubeTranscript(doc.youtubeUrl); } catch { /* ignore */ }
+      if (captionText) {
+        transcription = captionText;
+        console.log(`[YouTube] transcrição via legenda: ${captionText.length} chars`);
       } else {
-        audioUrl = doc.youtubeUrl;
-        isYoutube = true;
+        const r = await transcribeAudio({
+          audioUrl: doc.youtubeUrl, isYoutube: true, language: "pt",
+          prompt: "Transcrição de reunião de negócios em português brasileiro. Nomes de sistemas: PLM, RLM, WMS, SAP, ERP, Shopify.",
+        });
+        if ("error" in r) throw new Error(`Falha na transcrição: ${(r as any).error}. ${(r as any).details ?? ""}`);
+        transcription = (r as any).text ?? "";
+      }
+      // Capturas: seek no stream do YouTube (sem baixar o vídeo inteiro).
+      if (includeScreenshots) {
+        try { rawFrames = await grabYoutubeFrames(doc.youtubeUrl, 16); }
+        catch (e) { console.warn("[YouTube] captura de frames falhou:", e); }
       }
     } else if (doc.videoStorageKey) {
-      audioUrl = storagePath(doc.videoStorageKey);
+      const localVideo = storagePath(doc.videoStorageKey);
+      const r = await transcribeAudio({
+        audioUrl: localVideo, language: "pt",
+        prompt: "Transcrição de reunião de negócios em português brasileiro. Nomes de sistemas: PLM, RLM, WMS, SAP, ERP, Shopify.",
+      });
+      if ("error" in r) throw new Error(`Falha na transcrição: ${(r as any).error}. ${(r as any).details ?? ""}`);
+      transcription = (r as any).text ?? "";
+      if (includeScreenshots) {
+        try { rawFrames = await extractKeyFrames(localVideo, 16); }
+        catch (e) { console.warn("[Screenshots] extração falhou:", e); }
+        try { participants = await extractParticipants(localVideo); }
+        catch (e) { console.warn("[Participants] extração falhou:", e); }
+      }
     } else {
       throw new Error("Nenhuma fonte de vídeo disponível para transcrição.");
     }
 
-    const transcriptionResult = await transcribeAudio({
-      audioUrl,
-      isYoutube,
-      language: "pt",
-      prompt: "Transcrição de reunião de negócios em português brasileiro. Nomes de sistemas: PLM, RLM, WMS, SAP, ERP, Shopify.",
-    });
-    if ("error" in transcriptionResult) {
-      const errDetail = (transcriptionResult as any).details ?? "";
-      throw new Error(`Falha na transcrição: ${(transcriptionResult as any).error}. ${errDetail}`);
-    }
-    const transcription = (transcriptionResult as any).text ?? "";
     if (!transcription.trim()) {
-      throw new Error("A transcrição retornou vazia. Verifique se o vídeo contém áudio.");
+      throw new Error("A transcrição retornou vazia. Verifique se o vídeo tem legenda ou áudio.");
     }
     await updateDocument(doc.id, { transcription, status: "analyzing" });
 
-    // Capturas de tela + participantes (só para vídeo enviado; ambos best-effort e independentes —
-    // cada um no seu try/catch para uma feature opcional nunca derrubar o documento inteiro).
+    // Classifica os frames (descarta câmera/galeria, legenda factual) e sobe as capturas mantidas.
     let classified: ClassifiedFrame[] = [];
-    let participants: ParticipantsResult | null = null;
     const urlByIndex = new Map<number, string>();
-
-    if (includeScreenshots && localVideoKey) {
-      const localVideo = storagePath(localVideoKey);
-
-      // Extrai (mais frames, já que alguns serão descartados) e classifica: descarta câmera/
-      // galeria, mantém telas, com legenda factual. Em falha, classifyFrames degrada p/ "mantém
-      // tudo" — nunca lança.
-      try {
-        const frames = await extractKeyFrames(localVideo, 16);
-        classified = await classifyFrames(frames);
-      } catch (e) {
-        console.warn("[Screenshots] extração/classificação falhou:", e);
-      }
-
-      // Upload eager de TODAS as capturas mantidas (barato — disco local); a decisão de quais vão
-      // inline vs. galeria vem depois, via resolveScreenshotTokens.
+    if (includeScreenshots && rawFrames.length) {
+      try { classified = await classifyFrames(rawFrames); }
+      catch (e) { console.warn("[Screenshots] classificação falhou:", e); }
       for (const f of classified) {
         if (!f.keep) continue;
         try {
@@ -102,13 +95,6 @@ async function runDocumentPipeline(doc: Document, userId: number, includeScreens
         } catch (e) {
           console.warn(`[Screenshots] upload do frame ${f.index} falhou:`, e);
         }
-      }
-
-      // Participantes — independente das capturas; falha retorna lista vazia, não lança.
-      try {
-        participants = await extractParticipants(localVideo);
-      } catch (e) {
-        console.warn("[Participants] extração falhou:", e);
       }
     }
 
