@@ -134,7 +134,11 @@ export async function downloadVideoFromUrl(url: string, finalPath: string): Prom
   const produced = (await fs.readdir(dir)).find(f => f.startsWith(tag));
   if (r.code !== 0 || !produced) {
     for (const f of (await fs.readdir(dir)).filter(f => f.startsWith(tag))) await fs.rm(path.join(dir, f), { force: true }).catch(() => {});
-    throw new Error(`Falha ao baixar do link: ${r.stderr.slice(-800)}`);
+    const permBlocked = /403|forbidden|permission|not.*public|cannot.*access|sign in/i.test(r.stderr);
+    if (permBlocked) {
+      throw new Error("O arquivo não está acessível. No Google Drive, compartilhe o vídeo (ou a pasta que o contém) como \"Qualquer pessoa com o link\" e tente de novo.");
+    }
+    throw new Error(`Falha ao baixar do link: ${r.stderr.slice(-500)}`);
   }
   await fs.rm(finalPath, { force: true }).catch(() => {});
   await fs.rename(path.join(dir, produced), finalPath);
