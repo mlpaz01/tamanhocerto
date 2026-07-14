@@ -71,6 +71,25 @@ export default function DocumentView() {
     { enabled: doc?.status === "done" && !!doc?.pdfStorageKey, retry: false }
   );
 
+  // Nome de arquivo amigável (título da reunião), removendo caracteres inválidos.
+  const safeName = (ext: string) =>
+    `${(doc?.title ?? "documento").replace(/[\\/:*?"<>|]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 120) || "documento"}.${ext}`;
+
+  // Baixa via blob para garantir o nome do arquivo (o servidor manda um nome com hash).
+  const downloadAs = async (url: string, filename: string) => {
+    const resp = await fetch(url, { credentials: "include" });
+    if (!resp.ok) throw new Error("download falhou");
+    const blob = await resp.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = blobUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 4000);
+  };
+
   const handleDownloadDocx = async () => {
     if (!docxUrlQuery.data?.url) {
       toast.error("DOCX não disponível ainda.");
@@ -78,12 +97,7 @@ export default function DocumentView() {
     }
     setIsDownloading(true);
     try {
-      const a = document.createElement("a");
-      a.href = docxUrlQuery.data.url;
-      a.download = `${doc?.title ?? "documento"}.docx`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      await downloadAs(docxUrlQuery.data.url, safeName("docx"));
     } catch {
       toast.error("Erro ao baixar o arquivo.");
     } finally {
@@ -91,17 +105,16 @@ export default function DocumentView() {
     }
   };
 
-  const handleDownloadPdf = () => {
+  const handleDownloadPdf = async () => {
     if (!pdfUrlQuery.data?.url) {
       toast.error("PDF não disponível para este documento.");
       return;
     }
-    const a = document.createElement("a");
-    a.href = pdfUrlQuery.data.url;
-    a.download = `${doc?.title ?? "documento"}.pdf`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    try {
+      await downloadAs(pdfUrlQuery.data.url, safeName("pdf"));
+    } catch {
+      toast.error("Erro ao baixar o PDF.");
+    }
   };
 
   if (isLoading) {

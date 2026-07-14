@@ -88,6 +88,46 @@ function cleanNames(raw: unknown): string[] {
   return out;
 }
 
+// Fallback por TRANSCRIÇÃO: quando o vídeo é compartilhamento de tela (sem galeria de câmeras),
+// os nomes não aparecem nos quadros. Aqui pedimos ao LLM para inferir os participantes a partir
+// de quem fala / é citado / se apresenta na transcrição.
+const TRANSCRIPT_PARTICIPANTS_SYSTEM = `Você recebe a TRANSCRIÇÃO de uma reunião. Liste os NOMES
+das pessoas que participaram da reunião (quem fala, se apresenta, ou é claramente tratado como
+participante presente).
+
+Regras:
+- Inclua só pessoas que participaram da reunião. NÃO inclua nomes citados que são de terceiros
+  ausentes, empresas, sistemas ou produtos.
+- Use o nome como aparece (primeiro nome ou nome completo, o que estiver claro). Deduplique.
+- Se não der para identificar nomes de participantes com segurança, retorne lista vazia.
+
+Responda SOMENTE com JSON { "names": ["..."], "possiblyIncomplete": true|false }.`;
+
+export async function participantsFromTranscript(transcription: string): Promise<string[]> {
+  const text = (transcription || "").trim();
+  if (text.length < 80) return [];
+  try {
+    const response = await invokeLLM({
+      messages: [
+        { role: "system", content: TRANSCRIPT_PARTICIPANTS_SYSTEM },
+        { role: "user", content: `Transcrição:\n---\n${text.slice(0, 60000)}\n---` },
+      ],
+      response_format: {
+        type: "json_schema",
+        json_schema: { name: "participants_transcript", strict: true, schema: PARTICIPANTS_SCHEMA },
+      } as any,
+    });
+    const raw = response.choices[0]?.message?.content;
+    const t = typeof raw === "string" ? raw : JSON.stringify(raw);
+    let parsed: any = null;
+    try { parsed = JSON.parse(t); } catch { const m = t.match(/\{[\s\S]*\}/); if (m) { try { parsed = JSON.parse(m[0]); } catch { /* ignore */ } } }
+    return parsed ? cleanNames(parsed.names) : [];
+  } catch (e) {
+    console.warn("[Participants] extração por transcrição falhou:", e);
+    return [];
+  }
+}
+
 export async function extractParticipants(videoPath: string): Promise<ParticipantsResult> {
   const empty: ParticipantsResult = { names: [], possiblyIncomplete: true };
   const dir = path.join(os.tmpdir(), `vdoc-people-${crypto.randomUUID().slice(0, 8)}`);

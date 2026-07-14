@@ -237,11 +237,11 @@ function coverAndShell(
   const cover: Block[] = [
     new Paragraph({ children: [new TextRun({ text: "", break: 1 })], spacing: { before: 2000 } }),
     new Paragraph({
-      children: [new TextRun({ text: title, bold: true, color: "003087", size: 40, font: "Calibri" })],
-      alignment: AlignmentType.CENTER, spacing: { before: 400, after: 200, line: 360, lineRule: "auto" },
+      children: [new TextRun({ text: title, bold: true, color: "003087", size: 40, font: "Liberation Sans" })],
+      alignment: AlignmentType.CENTER, spacing: { before: 400, after: 200, line: 480, lineRule: "auto" },
     }),
     new Paragraph({
-      children: [new TextRun({ text: subtitle, color: "86888A", size: 28, font: "Calibri" })],
+      children: [new TextRun({ text: subtitle, color: "86888A", size: 28, font: "Liberation Sans" })],
       alignment: AlignmentType.CENTER, spacing: { after: 100 },
     }),
     new Paragraph({ children: [new PageBreak()] }),

@@ -19,7 +19,7 @@ import { transcribeAudio } from "./_core/voiceTranscription";
 import { extractKeyFrames, type ExtractedFrame } from "./_core/frameExtractor";
 import { fetchYoutubeTranscript, grabYoutubeFrames, downloadVideoFromUrl } from "./_core/youtube";
 import { classifyFrames, galleryMarkdown, buildSpecWebMarkdown, type ClassifiedFrame } from "./_core/frameClassifier";
-import { extractParticipants, type ParticipantsResult } from "./_core/participantExtractor";
+import { extractParticipants, participantsFromTranscript, type ParticipantsResult } from "./_core/participantExtractor";
 import { generateDeloitteDocument, formatDocumentAsMarkdown, generateSpecDocument } from "./documentGenerator";
 import { generateDocx, generateSpecDocx } from "./docxGenerator";
 import { docxBufferToPdf } from "./pdfGenerator";
@@ -114,6 +114,17 @@ async function runDocumentPipeline(doc: Document, userId: number, includeScreens
         } catch (e) {
           console.warn(`[Screenshots] upload do frame ${f.index} falhou:`, e);
         }
+      }
+    }
+
+    // Participantes: se a visão não achou nomes (ex.: reunião em compartilhamento de tela),
+    // tenta inferir pela transcrição.
+    if (!participants || !participants.names.length) {
+      try {
+        const tnames = await participantsFromTranscript(transcription);
+        if (tnames.length) participants = { names: tnames, possiblyIncomplete: true };
+      } catch (e) {
+        console.warn("[Participants] fallback por transcrição falhou:", e);
       }
     }
 
